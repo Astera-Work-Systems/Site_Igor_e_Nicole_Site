@@ -1,27 +1,38 @@
 import { Quote, Heart, Plus } from 'lucide-react';
-import { mockRecados } from '@/data/mockData';
 import { formatarData } from '@/lib/utils/cupons';
-import { useState } from 'react';
+import { criarRecado, listarRecados } from '@/lib/api';
+import type { Recado } from '@/types';
+import { useEffect, useState } from 'react';
 
 export default function MuralRecados() {
-  const [recados, setRecados] = useState(mockRecados);
+  const [recados, setRecados] = useState<Recado[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [novoRecado, setNovoRecado] = useState({ nome: '', mensagem: '' });
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    listarRecados().then(setRecados).catch(() => {});
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (novoRecado.nome.trim().length < 3 || novoRecado.mensagem.trim().length < 5) return;
-
-    const recado = {
-      id: `r${Date.now()}`,
-      nome_convidado: novoRecado.nome,
-      mensagem: novoRecado.mensagem,
-      presente_titulo: 'Mensagem de carinho',
-      created_at: new Date().toISOString(),
-    };
-    setRecados([recado, ...recados]);
-    setNovoRecado({ nome: '', mensagem: '' });
-    setShowForm(false);
+    if (novoRecado.nome.trim().length < 3 || novoRecado.mensagem.trim().length < 5) {
+      setErro('Escreva seu nome e uma mensagem um pouquinho maior.');
+      return;
+    }
+    setEnviando(true);
+    setErro('');
+    try {
+      const recado = await criarRecado(novoRecado.nome, novoRecado.mensagem);
+      setRecados([recado, ...recados]);
+      setNovoRecado({ nome: '', mensagem: '' });
+      setShowForm(false);
+    } catch {
+      setErro('Não foi possível enviar agora. Tente novamente.');
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -62,6 +73,7 @@ export default function MuralRecados() {
                 placeholder="Seu nome"
                 value={novoRecado.nome}
                 onChange={(e) => setNovoRecado({ ...novoRecado, nome: e.target.value })}
+                maxLength={80}
                 className="w-full px-4 py-3 rounded-xl border border-champagne-100 bg-canvas text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:border-champagne focus:ring-champagne-100 transition-all"
               />
               <textarea
@@ -69,14 +81,17 @@ export default function MuralRecados() {
                 value={novoRecado.mensagem}
                 onChange={(e) => setNovoRecado({ ...novoRecado, mensagem: e.target.value })}
                 rows={3}
+                maxLength={500}
                 className="w-full px-4 py-3 rounded-xl border border-champagne-100 bg-canvas text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:border-champagne focus:ring-champagne-100 transition-all resize-none"
               />
+              {erro && <p className="text-xs text-error">{erro}</p>}
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="flex-1 py-3 rounded-full bg-champagne text-white font-semibold shadow-sm hover:bg-champagne-dark transition-colors"
+                  disabled={enviando}
+                  className="disabled:opacity-60 flex-1 py-3 rounded-full bg-champagne text-white font-semibold shadow-sm hover:bg-champagne-dark transition-colors"
                 >
-                  Enviar recado
+                  {enviando ? 'Enviando...' : 'Enviar recado'}
                 </button>
                 <button
                   type="button"

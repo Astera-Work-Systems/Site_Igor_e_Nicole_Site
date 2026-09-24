@@ -1,5 +1,5 @@
 import { MapPin, Navigation, ExternalLink, Clock } from 'lucide-react';
-import { EVENT_LOCATION, EVENT_DATE } from '@/data/mockData';
+import { EVENT_LOCATION, EVENT_DATA_TEXTO, EVENT_HORA_TEXTO } from '@/data/mockData';
 
 export default function LocationSection() {
   return (
@@ -37,8 +37,8 @@ export default function LocationSection() {
                 <Clock className="w-6 h-6 text-champagne" strokeWidth={1.5} />
               </div>
               <div>
-                <h3 className="font-serif text-xl text-ink mb-1">10 de Abril de 2027</h3>
-                <p className="text-sm text-ink-muted">A partir das 18h00</p>
+                <h3 className="font-serif text-xl text-ink mb-1">{EVENT_DATA_TEXTO}</h3>
+                <p className="text-sm text-ink-muted">A partir das {EVENT_HORA_TEXTO}</p>
               </div>
             </div>
 

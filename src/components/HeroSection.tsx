@@ -1,4 +1,5 @@
 import { Heart, Sparkles } from 'lucide-react';
+import { EVENT_DATA_TEXTO, EVENT_HORA_TEXTO } from '@/data/mockData';
 
 const heroImage =
   'https://images.pexels.com/photos/853406/pexels-photo-853406.jpeg?auto=compress&cs=tinysrgb&w=1400';
@@ -18,7 +19,7 @@ export default function HeroSection() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-champagne-50 border border-champagne-200 mb-6">
               <Sparkles className="w-4 h-4 text-champagne" />
               <span className="text-xs font-semibold tracking-wider uppercase text-champagne-dark">
-                10 de Abril de 2027 · 18h00
+                {EVENT_DATA_TEXTO} · {EVENT_HORA_TEXTO}
               </span>
             </div>
 
@@ -40,8 +41,9 @@ export default function HeroSection() {
               e prêmios incríveis</span> para vocês!
             </p>
             <p className="text-base text-ink-muted leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
-              Para facilitar a montagem do nosso lar e evitar itens duplicados, transformamos
-              nossa lista em cotas virtuais.{' '}
+              Para facilitar a montagem do nosso lar e evitar itens duplicados, nossa lista
+              está aqui no site: presenteie por Pix ou cartão, ou marque que vai levar o
+              presente pessoalmente.{' '}
               <span className="font-semibold text-champagne-dark">
                 A cada R$ 50,00 em presentes, você ganha 1 número da sorte
               </span>{' '}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { EVENT_DATE } from '@/data/mockData';
+import { EVENT_DATE, EVENT_DATA_TEXTO, EVENT_HORA_TEXTO } from '@/data/mockData';
 
 interface TimeLeft {
   dias: number;
@@ -67,8 +67,8 @@ export default function Countdown() {
         </div>
 
         <p className="text-center mt-8 text-ink-muted text-sm">
-          <span className="font-serif text-lg text-ink">10 de Abril de 2027</span> às{' '}
-          <span className="font-serif text-lg text-ink">18h00</span> · Gurupi, Tocantins
+          <span className="font-serif text-lg text-ink">{EVENT_DATA_TEXTO}</span> às{' '}
+          <span className="font-serif text-lg text-ink">{EVENT_HORA_TEXTO}</span> · Gurupi, Tocantins
         </p>
       </div>
     </section>

@@ -3,14 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 /**
  * Cliente público do Supabase (browser-side).
  *
- * As credenciais são lidas de variáveis de ambiente. Quando o Supabase
- * ainda não estiver configurado (credenciais vazias), o cliente retorna
- * null e a aplicação usa os dados mock em memória.
+ * Lê VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY (públicas — a anon key pode ir pro navegador;
+ * a segurança está nas regras RLS do banco). NUNCA coloque chaves do Asaas ou a service_role aqui:
+ * tudo que começa com VITE_ vai parar no JavaScript do site.
  *
- * Para integrar:
- *  1. Crie um arquivo .env.local na raiz do projeto
- *  2. Adicione NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY
- *  3. As tabelas (presentes, transacoes, cupons_sorteio) já estão migradas
+ * Sem essas variáveis, o cliente é null e o site roda em modo demonstração (dados mock).
  */
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';

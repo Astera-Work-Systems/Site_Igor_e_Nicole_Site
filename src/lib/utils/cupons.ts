@@ -1,9 +1,9 @@
 /**
- * Calcula a quantidade de cupons de sorteio com base no valor do presente.
- * Regra do PRD: Math.floor(valor / 50) — a cada R$ 50,00 = 1 número da sorte.
+ * Quantidade de números da sorte para um valor: 1 a cada `valorPorCupom` (configurável no painel).
+ * A geração oficial acontece no banco (confirmar_contribuicao); aqui é só a prévia na tela.
  */
-export function calcularCupons(valor: number): number {
-  return Math.floor(valor / 50);
+export function calcularCupons(valor: number, valorPorCupom: number = 50): number {
+  return Math.floor(valor / valorPorCupom);
 }
 
 /**
@@ -17,22 +17,10 @@ export function formatarValor(valor: number): string {
 }
 
 /**
- * Gera números da sorte formatados com zero à esquerda (ex: #042, #043).
+ * Formata o número da sorte com zeros à esquerda (ex: 42 → #042).
  */
-export function gerarNumerosSorte(qtd: number, base: number = 42): string[] {
-  const numeros: string[] = [];
-  for (let i = 0; i < qtd; i++) {
-    const num = base + i;
-    numeros.push(`#${String(num).padStart(3, '0')}`);
-  }
-  return numeros;
-}
-
-/**
- * Gera um ID pseudo-aleatório simples para uso em mock data.
- */
-export function gerarId(): string {
-  return Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+export function formatarCupom(numero: number): string {
+  return `#${String(numero).padStart(3, '0')}`;
 }
 
 /**
@@ -43,5 +31,14 @@ export function formatarData(iso: string): string {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
+  });
+}
+
+export function formatarDataHora(iso: string): string {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }

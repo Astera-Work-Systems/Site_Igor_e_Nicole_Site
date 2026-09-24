@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   Gift,
@@ -12,57 +12,85 @@ import {
   X,
   ArrowLeft,
   Save,
+  Receipt,
+  Settings,
+  LogOut,
+  Loader2,
+  HandHeart,
+  MessageCircle,
+  Shuffle,
+  AlertCircle,
 } from 'lucide-react';
-import { mockPresentes } from '@/data/mockData';
-import { formatarValor, calcularCupons, gerarId } from '@/lib/utils/cupons';
-import type { Presente } from '@/types';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase/client';
+import { CATEGORIAS, EVENT_DATA_TEXTO } from '@/data/mockData';
+import { CONFIG_PADRAO, obterConfiguracoes } from '@/lib/api';
+import * as admin from '@/lib/admin';
+import { formatarValor, formatarCupom, formatarDataHora } from '@/lib/utils/cupons';
+import { disponibilidade, MODOS_PRESENTE } from '@/lib/utils/presentes';
+import { linkWhatsAppConvidado } from '@/lib/utils/whatsapp';
+import type {
+  Configuracoes,
+  Contribuicao,
+  CupomSorteio,
+  ModoPresente,
+  Presente,
+  PresenteEditavel,
+  StatusContribuicao,
+} from '@/types';
 
-type AdminTab = 'dashboard' | 'presentes' | 'sorteio';
+type AdminTab = 'dashboard' | 'presentes' | 'contribuicoes' | 'sorteio' | 'configuracoes';
 
 export default function AdminPanel() {
-  const [tab, setTab] = useState<AdminTab>('dashboard');
-  const [presentes, setPresentes] = useState<Presente[]>(mockPresentes);
-  const [editing, setEditing] = useState<Presente | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [carregandoSessao, setCarregandoSessao] = useState(true);
+  const [ehAdmin, setEhAdmin] = useState<boolean | null>(null);
 
-  // Stats
-  const totalArrecadado = presentes.reduce(
-    (acc, p) => acc + p.valor * p.quantidade_comprada,
-    0,
-  );
-  const totalCupons = presentes.reduce(
-    (acc, p) => acc + calcularCupons(p.valor) * p.quantidade_comprada,
-    0,
-  );
-  const totalVendidos = presentes.reduce((acc, p) => acc + p.quantidade_comprada, 0);
-  const totalDisponiveis = presentes.reduce(
-    (acc, p) => acc + (p.quantidade_total - p.quantidade_comprada),
-    0,
-  );
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setCarregandoSessao(false);
+    });
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => data.subscription.unsubscribe();
+  }, []);
 
-  const handleSave = (presente: Presente) => {
-    if (editing) {
-      setPresentes(presentes.map((p) => (p.id === presente.id ? presente : p)));
-    } else {
-      setPresentes([...presentes, { ...presente, id: gerarId() }]);
+  useEffect(() => {
+    if (!session) {
+      setEhAdmin(null);
+      return;
     }
-    setEditing(null);
-    setShowForm(false);
-  };
+    admin.souAdmin().then(setEhAdmin).catch(() => setEhAdmin(false));
+  }, [session]);
 
-  const handleDelete = (id: string) => {
-    setPresentes(presentes.filter((p) => p.id !== id));
-  };
-
-  const handleEdit = (p: Presente) => {
-    setEditing(p);
-    setShowForm(true);
-  };
-
-  const handleNew = () => {
-    setEditing(null);
-    setShowForm(true);
-  };
+  let conteudo: React.ReactNode;
+  if (!supabase) {
+    conteudo = (
+      <Aviso titulo="Painel indisponível no modo demonstração">
+        Configure <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code> para usar o painel.
+      </Aviso>
+    );
+  } else if (carregandoSessao || (session && ehAdmin === null)) {
+    conteudo = (
+      <div className="flex justify-center py-20">
+        <Loader2 className="w-8 h-8 text-champagne animate-spin" />
+      </div>
+    );
+  } else if (!session) {
+    conteudo = <Login />;
+  } else if (!ehAdmin) {
+    conteudo = (
+      <Aviso titulo="Sem permissão">
+        Este usuário ({session.user.email}) não está cadastrado como administrador.{' '}
+        <button onClick={admin.sair} className="underline text-champagne-dark">
+          Sair
+        </button>
+      </Aviso>
+    );
+  } else {
+    conteudo = <Painel />;
+  }
 
   return (
     <div className="min-h-screen bg-canvas pt-20">
@@ -75,181 +103,786 @@ export default function AdminPanel() {
               Gerencie presentes, acompanhe arrecadação e visualize cupons do sorteio
             </p>
           </div>
-          <a
-            href="#/"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-champagne-200 text-ink-soft text-sm font-medium hover:bg-champagne-50 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar ao site
-          </a>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 bg-white rounded-2xl border border-champagne-100 p-2">
-          {[
-            { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
-            { id: 'presentes' as const, label: 'Presentes', icon: Gift },
-            { id: 'sorteio' as const, label: 'Sorteio', icon: Ticket },
-          ].map((t) => {
-            const Icon = t.icon;
-            return (
+          <div className="flex gap-2">
+            {session && (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  tab === t.id
-                    ? 'bg-champagne text-white shadow-sm'
-                    : 'text-ink-soft hover:bg-champagne-50'
-                }`}
+                onClick={admin.sair}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-champagne-200 text-ink-soft text-sm font-medium hover:bg-champagne-50 transition-colors"
               >
-                <Icon className="w-4 h-4" />
-                {t.label}
+                <LogOut className="w-4 h-4" />
+                Sair
               </button>
-            );
-          })}
+            )}
+            <a
+              href="#/"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-champagne-200 text-ink-soft text-sm font-medium hover:bg-champagne-50 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar ao site
+            </a>
+          </div>
         </div>
 
-        {/* Dashboard */}
-        {tab === 'dashboard' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard
-                icon={DollarSign}
-                label="Total Arrecadado"
-                value={formatarValor(totalArrecadado)}
-                color="champagne"
-              />
-              <StatCard
-                icon={Ticket}
-                label="Cupons Gerados"
-                value={String(totalCupons)}
-                color="success"
-              />
-              <StatCard
-                icon={TrendingUp}
-                label="Cotas Vendidas"
-                value={String(totalVendidos)}
-                color="champagne"
-              />
-              <StatCard
-                icon={Users}
-                label="Cotas Disponíveis"
-                value={String(totalDisponiveis)}
-                color="ink"
-              />
-            </div>
+        {conteudo}
+      </div>
+    </div>
+  );
+}
 
-            {/* Tabela de presentes mais vendidos */}
-            <div className="bg-white rounded-2xl border border-champagne-100 p-6">
-              <h3 className="font-serif text-lg text-ink mb-4">Presentes mais populares</h3>
-              <div className="space-y-3">
-                {[...presentes]
-                  .sort((a, b) => b.quantidade_comprada - a.quantidade_comprada)
-                  .slice(0, 5)
-                  .map((p) => {
-                    const pct = (p.quantidade_comprada / p.quantidade_total) * 100;
-                    return (
-                      <div key={p.id} className="flex items-center gap-4">
-                        <img src={p.imagem_url} alt={p.titulo} className="w-12 h-12 rounded-lg object-cover" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-ink truncate">{p.titulo}</p>
-                          <div className="h-1.5 rounded-full bg-champagne-50 mt-1.5 overflow-hidden">
-                            <div className="h-full rounded-full bg-champagne" style={{ width: `${pct}%` }} />
-                          </div>
+// ==================== LOGIN ====================
+
+function Login() {
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState('');
+  const [entrando, setEntrando] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro('');
+    setEntrando(true);
+    try {
+      await admin.entrar(email, senha);
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível entrar.');
+    } finally {
+      setEntrando(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-sm mx-auto bg-white rounded-2xl border border-champagne-100 p-6 space-y-4"
+    >
+      <h3 className="font-serif text-lg text-ink">Entrar</h3>
+      <div>
+        <label className="block text-sm font-medium text-ink-soft mb-1.5">E-mail</label>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink-soft mb-1.5">Senha</label>
+        <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} className={inputClass} />
+      </div>
+      {erro && <p className="text-xs text-error">{erro}</p>}
+      <button
+        type="submit"
+        disabled={entrando}
+        className="w-full py-2.5 rounded-full bg-champagne text-white font-semibold shadow-sm hover:bg-champagne-dark transition-colors disabled:opacity-60"
+      >
+        {entrando ? 'Entrando...' : 'Entrar'}
+      </button>
+    </form>
+  );
+}
+
+// ==================== PAINEL ====================
+
+function Painel() {
+  const [tab, setTab] = useState<AdminTab>('dashboard');
+  const [presentes, setPresentes] = useState<Presente[]>([]);
+  const [contribuicoes, setContribuicoes] = useState<Contribuicao[]>([]);
+  const [cupons, setCupons] = useState<CupomSorteio[]>([]);
+  const [config, setConfig] = useState<Configuracoes>(CONFIG_PADRAO);
+  const [erro, setErro] = useState('');
+
+  const recarregar = useCallback(async () => {
+    try {
+      const [p, c, cp, cfg] = await Promise.all([
+        admin.listarPresentesAdmin(),
+        admin.listarContribuicoes(),
+        admin.listarCupons(),
+        obterConfiguracoes(),
+      ]);
+      setPresentes(p);
+      setContribuicoes(c);
+      setCupons(cp);
+      setConfig(cfg);
+      setErro('');
+    } catch {
+      setErro('Não foi possível carregar os dados. Recarregue a página.');
+    }
+  }, []);
+
+  useEffect(() => {
+    recarregar();
+  }, [recarregar]);
+
+  const confirmadas = contribuicoes.filter((c) => c.status === 'confirmado');
+  const pagas = confirmadas.filter((c) => c.tipo === 'site');
+  const totalArrecadado = pagas.reduce((acc, c) => acc + Number(c.valor), 0);
+  const totalPessoalmente = confirmadas.filter((c) => c.tipo === 'pessoalmente').length;
+
+  return (
+    <>
+      {/* Tabs */}
+      <div className="flex gap-2 mb-8 bg-white rounded-2xl border border-champagne-100 p-2 overflow-x-auto">
+        {[
+          { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
+          { id: 'presentes' as const, label: 'Presentes', icon: Gift },
+          { id: 'contribuicoes' as const, label: 'Contribuições', icon: Receipt },
+          { id: 'sorteio' as const, label: 'Sorteio', icon: Ticket },
+          { id: 'configuracoes' as const, label: 'Configurações', icon: Settings },
+        ].map((t) => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                tab === t.id ? 'bg-champagne text-white shadow-sm' : 'text-ink-soft hover:bg-champagne-50'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {erro && (
+        <div className="mb-6 flex items-center gap-2 rounded-xl bg-error-light p-3 text-sm text-error">
+          <AlertCircle className="w-4 h-4" /> {erro}
+        </div>
+      )}
+
+      {tab === 'dashboard' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard icon={DollarSign} label="Total Arrecadado" value={formatarValor(totalArrecadado)} color="champagne" />
+            <StatCard icon={Ticket} label="Cupons Gerados" value={String(cupons.length)} color="success" />
+            <StatCard icon={TrendingUp} label="Pagamentos Confirmados" value={String(pagas.length)} color="champagne" />
+            <StatCard icon={Users} label="Vão dar pessoalmente" value={String(totalPessoalmente)} color="ink" />
+          </div>
+
+          <div className="bg-white rounded-2xl border border-champagne-100 p-6">
+            <h3 className="font-serif text-lg text-ink mb-4">Presentes mais populares</h3>
+            <div className="space-y-3">
+              {[...presentes]
+                .sort((a, b) => disponibilidade(b).progresso - disponibilidade(a).progresso)
+                .slice(0, 5)
+                .map((p) => {
+                  const d = disponibilidade(p);
+                  return (
+                    <div key={p.id} className="flex items-center gap-4">
+                      <img src={p.imagem_url} alt={p.titulo} className="w-12 h-12 rounded-lg object-cover" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-ink truncate">{p.titulo}</p>
+                        <div className="h-1.5 rounded-full bg-champagne-50 mt-1.5 overflow-hidden">
+                          <div className="h-full rounded-full bg-champagne" style={{ width: `${d.progresso}%` }} />
                         </div>
-                        <span className="text-sm text-ink-muted whitespace-nowrap">
-                          {p.quantidade_comprada}/{p.quantidade_total}
-                        </span>
                       </div>
-                    );
-                  })}
+                      <span className="text-sm text-ink-muted whitespace-nowrap">{d.resumo}</span>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'presentes' && <AbaPresentes presentes={presentes} onAlterado={recarregar} />}
+      {tab === 'contribuicoes' && <AbaContribuicoes contribuicoes={contribuicoes} onAlterado={recarregar} />}
+      {tab === 'sorteio' && <AbaSorteio cupons={cupons} />}
+      {tab === 'configuracoes' && <AbaConfiguracoes config={config} onAlterado={recarregar} />}
+    </>
+  );
+}
+
+// ==================== PRESENTES ====================
+
+function AbaPresentes({ presentes, onAlterado }: { presentes: Presente[]; onAlterado: () => void }) {
+  const [editing, setEditing] = useState<Presente | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [confirmarExclusao, setConfirmarExclusao] = useState<string | null>(null);
+  const [erro, setErro] = useState('');
+
+  const handleSave = async (p: PresenteEditavel) => {
+    await admin.salvarPresente(p);
+    setEditing(null);
+    setShowForm(false);
+    onAlterado();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirmarExclusao !== id) {
+      setConfirmarExclusao(id);
+      return;
+    }
+    setConfirmarExclusao(null);
+    try {
+      await admin.excluirPresente(id);
+      onAlterado();
+    } catch {
+      setErro('Não foi possível excluir. Tente desativar o presente.');
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-serif text-lg text-ink">Gerenciar Presentes</h3>
+        <button
+          onClick={() => {
+            setEditing(null);
+            setShowForm(true);
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-champagne text-white text-sm font-semibold shadow-sm hover:bg-champagne-dark transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Novo presente
+        </button>
+      </div>
+
+      {erro && <p className="text-sm text-error mb-4">{erro}</p>}
+
+      {showForm && (
+        <PresenteForm
+          key={editing?.id ?? 'novo'}
+          presente={editing}
+          onSave={handleSave}
+          onCancel={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
+        />
+      )}
+
+      <div className="space-y-3">
+        {presentes.map((p) => {
+          const d = disponibilidade(p);
+          return (
+            <div
+              key={p.id}
+              className={`flex items-center gap-4 bg-white rounded-2xl border border-champagne-100 p-4 hover:shadow-sm transition-shadow ${
+                p.ativo ? '' : 'opacity-60'
+              }`}
+            >
+              <img src={p.imagem_url} alt={p.titulo} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-ink truncate">
+                  {p.titulo} {!p.ativo && <span className="text-xs text-ink-muted">(oculto)</span>}
+                </p>
+                <p className="text-xs text-ink-muted">
+                  {p.categoria} · {MODOS_PRESENTE[p.modo].nome} · {formatarValor(p.valor)} · {d.resumo}
+                  {p.modo === 'inteiro' && p.permite_pessoalmente && ' · aceita pessoalmente'}
+                </p>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    setEditing(p);
+                    setShowForm(true);
+                  }}
+                  className="p-2 rounded-lg hover:bg-champagne-50 text-ink-soft hover:text-champagne transition-colors"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  onBlur={() => setConfirmarExclusao(null)}
+                  className="p-2 rounded-lg hover:bg-error-light text-ink-soft hover:text-error transition-colors text-xs font-medium"
+                >
+                  {confirmarExclusao === p.id ? 'Confirmar?' : <Trash2 className="w-4 h-4" />}
+                </button>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-        {/* Presentes CRUD */}
-        {tab === 'presentes' && (
+function PresenteForm({
+  presente,
+  onSave,
+  onCancel,
+}: {
+  presente: Presente | null;
+  onSave: (p: PresenteEditavel) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [form, setForm] = useState<PresenteEditavel>(
+    presente || {
+      id: '',
+      titulo: '',
+      categoria: CATEGORIAS[0],
+      imagem_url: '',
+      modo: 'inteiro',
+      valor: 0,
+      quantidade_total: 1,
+      valor_minimo: null,
+      permite_pessoalmente: true,
+      ativo: true,
+    },
+  );
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+  const temContribuicoes = presente ? presente.quantidade_ocupada > 0 || presente.valor_ocupado > 0 : false;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.titulo.trim() || form.valor <= 0 || !form.imagem_url.trim()) {
+      setErro('Preencha título, valor e imagem.');
+      return;
+    }
+    setSalvando(true);
+    setErro('');
+    try {
+      await onSave(form);
+    } catch {
+      setErro('Não foi possível salvar.');
+      setSalvando(false);
+    }
+  };
+
+  const rotuloValor = { inteiro: 'Valor de 1 unidade (R$)', cotas: 'Valor de cada cota (R$)', livre: 'Meta total (R$)' }[
+    form.modo
+  ];
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-champagne-100 p-6 mb-6 space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-serif text-lg text-ink">{presente ? 'Editar presente' : 'Novo presente'}</h4>
+        <button type="button" onClick={onCancel} className="p-1.5 rounded-full hover:bg-champagne-50">
+          <X className="w-5 h-5 text-ink-soft" />
+        </button>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-ink-soft mb-1.5">Título</label>
+          <input
+            type="text"
+            value={form.titulo}
+            onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-ink-soft mb-1.5">Categoria</label>
+          <select
+            value={form.categoria}
+            onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+            className={inputClass}
+          >
+            {CATEGORIAS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Modo */}
+      <div>
+        <label className="block text-sm font-medium text-ink-soft mb-1.5">Como o presente é dado</label>
+        <div className="grid sm:grid-cols-3 gap-2">
+          {(Object.keys(MODOS_PRESENTE) as ModoPresente[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setForm({ ...form, modo: m })}
+              className={`text-left p-3 rounded-xl border transition-all ${
+                form.modo === m
+                  ? 'border-champagne bg-champagne-50 ring-2 ring-champagne-100'
+                  : 'border-champagne-100 hover:bg-champagne-50'
+              }`}
+            >
+              <p className="text-sm font-semibold text-ink">{MODOS_PRESENTE[m].nome}</p>
+              <p className="text-xs text-ink-muted mt-0.5">{MODOS_PRESENTE[m].descricao}</p>
+            </button>
+          ))}
+        </div>
+        {temContribuicoes && form.modo !== presente?.modo && (
+          <p className="text-xs text-error mt-2">
+            Atenção: este presente já recebeu contribuições. Mudar o modo pode deixar a contagem estranha.
+          </p>
+        )}
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-ink-soft mb-1.5">{rotuloValor}</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={form.valor || ''}
+            onChange={(e) => setForm({ ...form, valor: parseFloat(e.target.value) || 0 })}
+            className={inputClass}
+          />
+        </div>
+        {form.modo !== 'livre' ? (
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-serif text-lg text-ink">Gerenciar Presentes</h3>
-              <button
-                onClick={handleNew}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-champagne text-white text-sm font-semibold shadow-sm hover:bg-champagne-dark transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Novo presente
-              </button>
-            </div>
-
-            {showForm && (
-              <PresenteForm
-                presente={editing}
-                onSave={handleSave}
-                onCancel={() => { setShowForm(false); setEditing(null); }}
-              />
+            <label className="block text-sm font-medium text-ink-soft mb-1.5">
+              {form.modo === 'cotas' ? 'Número de cotas' : 'Quantas unidades vocês querem'}
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={form.quantidade_total}
+              onChange={(e) => setForm({ ...form, quantidade_total: parseInt(e.target.value) || 1 })}
+              className={inputClass}
+            />
+            {form.modo === 'cotas' && form.valor > 0 && (
+              <p className="text-xs text-ink-muted mt-1">
+                Total do presente: {formatarValor(form.valor * form.quantidade_total)}
+              </p>
             )}
-
-            <div className="space-y-3">
-              {presentes.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center gap-4 bg-white rounded-2xl border border-champagne-100 p-4 hover:shadow-sm transition-shadow"
-                >
-                  <img src={p.imagem_url} alt={p.titulo} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-ink truncate">{p.titulo}</p>
-                    <p className="text-xs text-ink-muted">
-                      {p.categoria} · {formatarValor(p.valor)} · {p.quantidade_comprada}/{p.quantidade_total} cotas
-                    </p>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => handleEdit(p)}
-                      className="p-2 rounded-lg hover:bg-champagne-50 text-ink-soft hover:text-champagne transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p.id)}
-                      className="p-2 rounded-lg hover:bg-error-light text-ink-soft hover:text-error transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
-        )}
-
-        {/* Sorteio */}
-        {tab === 'sorteio' && (
-          <div className="bg-white rounded-2xl border border-champagne-100 p-8 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-champagne-50 border border-champagne-100 mb-4">
-              <Ticket className="w-8 h-8 text-champagne" strokeWidth={1.5} />
-            </div>
-            <h3 className="font-serif text-xl text-ink mb-2">Sorteio do Chá de Panela</h3>
-            <p className="text-ink-muted text-sm max-w-md mx-auto mb-6">
-              Total de <strong className="text-champagne-dark">{totalCupons} cupons</strong> gerados
-              até agora. O sorteio acontece presencialmente no dia 10 de Abril de 2027.
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto">
-              {Array.from({ length: 8 }, (_, i) => (
-                <div
-                  key={i}
-                  className="aspect-square flex items-center justify-center rounded-xl bg-champagne-50 border border-champagne-100 font-serif text-lg text-champagne-dark"
-                >
-                  #{String(totalCupons > 0 ? Math.floor(Math.random() * totalCupons) + 1 : 0).padStart(3, '0')}
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-ink-muted mt-4">
-              Preview ilustrativo dos cupons. O sorteio oficial é presencial.
-            </p>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-ink-soft mb-1.5">Valor mínimo por pessoa (R$)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="1"
+              value={form.valor_minimo ?? ''}
+              onChange={(e) => setForm({ ...form, valor_minimo: parseFloat(e.target.value) || null })}
+              className={inputClass}
+            />
           </div>
         )}
       </div>
+
+      <div>
+        <label className="block text-sm font-medium text-ink-soft mb-1.5">URL da imagem</label>
+        <input
+          type="text"
+          value={form.imagem_url}
+          onChange={(e) => setForm({ ...form, imagem_url: e.target.value })}
+          placeholder="https://..."
+          className={inputClass}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {form.modo === 'inteiro' && (
+          <label className="flex items-center gap-2 text-sm text-ink-soft">
+            <input
+              type="checkbox"
+              checked={form.permite_pessoalmente}
+              onChange={(e) => setForm({ ...form, permite_pessoalmente: e.target.checked })}
+              className="accent-champagne"
+            />
+            Aceita "Vou dar pessoalmente" (recomendado só para presentes menores)
+          </label>
+        )}
+        <label className="flex items-center gap-2 text-sm text-ink-soft">
+          <input
+            type="checkbox"
+            checked={form.ativo}
+            onChange={(e) => setForm({ ...form, ativo: e.target.checked })}
+            className="accent-champagne"
+          />
+          Visível na vitrine
+        </label>
+      </div>
+
+      {erro && <p className="text-xs text-error">{erro}</p>}
+
+      <div className="flex gap-3 pt-2">
+        <button
+          type="submit"
+          disabled={salvando}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-champagne text-white font-semibold shadow-sm hover:bg-champagne-dark transition-colors disabled:opacity-60"
+        >
+          <Save className="w-4 h-4" />
+          {salvando ? 'Salvando...' : 'Salvar'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-6 py-2.5 rounded-full bg-white border border-champagne-200 text-ink-soft hover:bg-champagne-50 transition-colors"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// ==================== CONTRIBUIÇÕES ====================
+
+type FiltroContribuicao = 'todas' | 'confirmado' | 'pendente' | 'pessoalmente' | 'cancelado';
+
+const STATUS_ESTILO: Record<StatusContribuicao, string> = {
+  confirmado: 'bg-success-light text-success',
+  pendente: 'bg-champagne-50 text-champagne-dark',
+  cancelado: 'bg-gray-100 text-ink-muted',
+};
+
+function AbaContribuicoes({ contribuicoes, onAlterado }: { contribuicoes: Contribuicao[]; onAlterado: () => void }) {
+  const [filtro, setFiltro] = useState<FiltroContribuicao>('todas');
+  const [confirmarCancelamento, setConfirmarCancelamento] = useState<string | null>(null);
+
+  const lista = contribuicoes.filter((c) => {
+    if (filtro === 'todas') return true;
+    if (filtro === 'pessoalmente') return c.tipo === 'pessoalmente' && c.status === 'confirmado';
+    return c.status === filtro;
+  });
+
+  const handleCancelar = async (id: string) => {
+    if (confirmarCancelamento !== id) {
+      setConfirmarCancelamento(id);
+      return;
+    }
+    setConfirmarCancelamento(null);
+    await admin.cancelarContribuicao(id);
+    onAlterado();
+  };
+
+  const filtros: { id: FiltroContribuicao; label: string }[] = [
+    { id: 'todas', label: 'Todas' },
+    { id: 'confirmado', label: 'Confirmadas' },
+    { id: 'pendente', label: 'Aguardando pagamento' },
+    { id: 'pessoalmente', label: 'Vão dar pessoalmente' },
+    { id: 'cancelado', label: 'Canceladas' },
+  ];
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {filtros.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFiltro(f.id)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filtro === f.id
+                ? 'bg-ink text-white shadow-sm'
+                : 'bg-white border border-champagne-100 text-ink-soft hover:bg-champagne-50'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {lista.length === 0 ? (
+        <p className="text-center text-ink-muted py-12">Nenhuma contribuição aqui ainda.</p>
+      ) : (
+        <div className="space-y-3">
+          {lista.map((c) => {
+            const podeCancelar = c.status === 'pendente' || (c.status === 'confirmado' && c.tipo === 'pessoalmente');
+            return (
+              <div key={c.id} className="bg-white rounded-2xl border border-champagne-100 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-ink">
+                      {c.nome_convidado}{' '}
+                      <a
+                        href={linkWhatsAppConvidado(c.whatsapp)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-champagne-dark hover:underline"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" /> {c.whatsapp}
+                      </a>
+                    </p>
+                    <p className="text-xs text-ink-muted mt-0.5">
+                      {c.presente_titulo}
+                      {c.quantidade > 1 && ` · ${c.quantidade}×`} · {formatarDataHora(c.created_at)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif text-lg text-champagne-dark">{formatarValor(Number(c.valor))}</span>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-champagne-50 text-ink-soft inline-flex items-center gap-1">
+                      {c.tipo === 'pessoalmente' ? (
+                        <>
+                          <HandHeart className="w-3.5 h-3.5" /> Pessoalmente
+                        </>
+                      ) : c.forma_pagamento === 'pix' ? (
+                        'Pix'
+                      ) : (
+                        'Cartão'
+                      )}
+                    </span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_ESTILO[c.status]}`}>
+                      {c.status}
+                    </span>
+                  </div>
+                </div>
+                {c.mensagem && <p className="text-sm text-ink-soft italic mt-2">"{c.mensagem}"</p>}
+                {podeCancelar && (
+                  <button
+                    onClick={() => handleCancelar(c.id)}
+                    onBlur={() => setConfirmarCancelamento(null)}
+                    className="mt-3 text-xs font-medium text-error hover:underline"
+                  >
+                    {confirmarCancelamento === c.id
+                      ? 'Clique de novo para confirmar — o item volta para a lista'
+                      : c.tipo === 'pessoalmente'
+                        ? 'Cancelar reserva (a pessoa desistiu)'
+                        : 'Cancelar e liberar a cota'}
+                  </button>
+                )}
+                {c.status === 'confirmado' && c.tipo === 'site' && (
+                  <p className="mt-3 text-xs text-ink-muted">
+                    Para devolver o dinheiro, faça o estorno no painel do Asaas — o site atualiza sozinho.
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== SORTEIO ====================
+
+function AbaSorteio({ cupons }: { cupons: CupomSorteio[] }) {
+  const [sorteado, setSorteado] = useState<CupomSorteio | null>(null);
+
+  const sortear = () => {
+    if (cupons.length === 0) return;
+    const aleatorio = new Uint32Array(1);
+    crypto.getRandomValues(aleatorio);
+    setSorteado(cupons[aleatorio[0] % cupons.length]);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl border border-champagne-100 p-8 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-champagne-50 border border-champagne-100 mb-4">
+          <Ticket className="w-8 h-8 text-champagne" strokeWidth={1.5} />
+        </div>
+        <h3 className="font-serif text-xl text-ink mb-2">Sorteio do Chá de Panela</h3>
+        <p className="text-ink-muted text-sm max-w-md mx-auto mb-6">
+          Total de <strong className="text-champagne-dark">{cupons.length} cupons</strong> gerados
+          até agora. O sorteio acontece presencialmente no dia {EVENT_DATA_TEXTO}.
+        </p>
+        <button
+          onClick={sortear}
+          disabled={cupons.length === 0}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-champagne text-white font-semibold shadow-sm hover:bg-champagne-dark transition-colors disabled:opacity-50"
+        >
+          <Shuffle className="w-4 h-4" /> Sortear um número
+        </button>
+        {sorteado && (
+          <div className="mt-6 animate-scale-in">
+            <p className="font-serif text-4xl text-champagne-dark">{formatarCupom(sorteado.numero_cupom)}</p>
+            <p className="text-ink mt-1">{sorteado.nome_convidado}</p>
+            <p className="text-xs text-ink-muted">{sorteado.whatsapp}</p>
+          </div>
+        )}
+      </div>
+
+      {cupons.length > 0 && (
+        <div className="bg-white rounded-2xl border border-champagne-100 p-6">
+          <h3 className="font-serif text-lg text-ink mb-4">Todos os números</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {cupons.map((c) => (
+              <div key={c.id} className="flex items-center gap-2 rounded-xl bg-champagne-50 border border-champagne-100 px-3 py-2">
+                <span className="font-serif text-champagne-dark">{formatarCupom(c.numero_cupom)}</span>
+                <span className="text-xs text-ink-soft truncate">{c.nome_convidado}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== CONFIGURAÇÕES ====================
+
+function AbaConfiguracoes({ config, onAlterado }: { config: Configuracoes; onAlterado: () => void }) {
+  const [form, setForm] = useState(config);
+  const [status, setStatus] = useState<'' | 'salvando' | 'salvo' | 'erro'>('');
+
+  useEffect(() => setForm(config), [config]);
+
+  const salvar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('salvando');
+    try {
+      await admin.salvarConfiguracoes(form);
+      setStatus('salvo');
+      onAlterado();
+    } catch {
+      setStatus('erro');
+    }
+  };
+
+  return (
+    <form onSubmit={salvar} className="bg-white rounded-2xl border border-champagne-100 p-6 space-y-5 max-w-2xl">
+      <h3 className="font-serif text-lg text-ink">Regras do site</h3>
+
+      <label className="flex items-start gap-3 text-sm text-ink-soft">
+        <input
+          type="checkbox"
+          checked={form.cupom_pessoalmente}
+          onChange={(e) => setForm({ ...form, cupom_pessoalmente: e.target.checked })}
+          className="accent-champagne mt-1"
+        />
+        <span>
+          <strong className="text-ink">Quem dá pessoalmente também ganha número da sorte</strong>
+          <br />
+          <span className="text-xs text-ink-muted">
+            Desligado: só presentes pagos pelo site geram números. Vale para as novas reservas.
+          </span>
+        </span>
+      </label>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-ink-soft mb-1.5">1 número da sorte a cada (R$)</label>
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            value={form.valor_por_cupom}
+            onChange={(e) => setForm({ ...form, valor_por_cupom: parseFloat(e.target.value) || 50 })}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-ink-soft mb-1.5">Reserva durante o pagamento (minutos)</label>
+          <input
+            type="number"
+            min="5"
+            max="1440"
+            value={form.minutos_reserva}
+            onChange={(e) => setForm({ ...form, minutos_reserva: parseInt(e.target.value) || 30 })}
+            className={inputClass}
+          />
+          <p className="text-xs text-ink-muted mt-1">
+            Tempo que a cota fica segura enquanto o convidado paga.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={status === 'salvando'}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-champagne text-white font-semibold shadow-sm hover:bg-champagne-dark transition-colors disabled:opacity-60"
+        >
+          <Save className="w-4 h-4" />
+          {status === 'salvando' ? 'Salvando...' : 'Salvar'}
+        </button>
+        {status === 'salvo' && <span className="text-sm text-success">Salvo!</span>}
+        {status === 'erro' && <span className="text-sm text-error">Não foi possível salvar.</span>}
+      </div>
+    </form>
+  );
+}
+
+// ==================== COMPONENTES AUXILIARES ====================
+
+const inputClass =
+  'w-full px-4 py-2.5 rounded-xl border border-champagne-100 bg-canvas text-ink focus:outline-none focus:ring-2 focus:border-champagne focus:ring-champagne-100';
+
+function Aviso({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-2xl border border-champagne-100 p-8 text-center max-w-lg mx-auto">
+      <h3 className="font-serif text-xl text-ink mb-2">{titulo}</h3>
+      <p className="text-ink-muted text-sm">{children}</p>
     </div>
   );
 }
@@ -278,121 +911,5 @@ function StatCard({
       <p className="text-xs text-ink-muted mb-1">{label}</p>
       <p className="font-serif text-xl text-ink">{value}</p>
     </div>
-  );
-}
-
-function PresenteForm({
-  presente,
-  onSave,
-  onCancel,
-}: {
-  presente: Presente | null;
-  onSave: (p: Presente) => void;
-  onCancel: () => void;
-}) {
-  const [form, setForm] = useState<Presente>(
-    presente || {
-      id: '',
-      titulo: '',
-      categoria: 'Cozinha',
-      imagem_url: '',
-      valor: 0,
-      quantidade_total: 1,
-      quantidade_comprada: 0,
-      ativo: true,
-    },
-  );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (form.titulo.trim() && form.valor > 0) {
-      onSave(form);
-    }
-  };
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white rounded-2xl border border-champagne-100 p-6 mb-6 space-y-4"
-    >
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="font-serif text-lg text-ink">
-          {presente ? 'Editar presente' : 'Novo presente'}
-        </h4>
-        <button type="button" onClick={onCancel} className="p-1.5 rounded-full hover:bg-champagne-50">
-          <X className="w-5 h-5 text-ink-soft" />
-        </button>
-      </div>
-
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1.5">Título</label>
-          <input
-            type="text"
-            value={form.titulo}
-            onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-            className="w-full px-4 py-2.5 rounded-xl border border-champagne-100 bg-canvas text-ink focus:outline-none focus:ring-2 focus:border-champagne focus:ring-champagne-100"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1.5">Categoria</label>
-          <select
-            value={form.categoria}
-            onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-            className="w-full px-4 py-2.5 rounded-xl border border-champagne-100 bg-canvas text-ink focus:outline-none focus:ring-2 focus:border-champagne focus:ring-champagne-100"
-          >
-            {['Cozinha', 'Eletrodomésticos', 'Mesa Posta', 'Cama & Banho', 'Cotas Grandes'].map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1.5">Valor (R$)</label>
-          <input
-            type="number"
-            step="0.01"
-            value={form.valor}
-            onChange={(e) => setForm({ ...form, valor: parseFloat(e.target.value) || 0 })}
-            className="w-full px-4 py-2.5 rounded-xl border border-champagne-100 bg-canvas text-ink focus:outline-none focus:ring-2 focus:border-champagne focus:ring-champagne-100"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1.5">Quantidade total</label>
-          <input
-            type="number"
-            value={form.quantidade_total}
-            onChange={(e) => setForm({ ...form, quantidade_total: parseInt(e.target.value) || 1 })}
-            className="w-full px-4 py-2.5 rounded-xl border border-champagne-100 bg-canvas text-ink focus:outline-none focus:ring-2 focus:border-champagne focus:ring-champagne-100"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-ink-soft mb-1.5">URL da imagem</label>
-        <input
-          type="text"
-          value={form.imagem_url}
-          onChange={(e) => setForm({ ...form, imagem_url: e.target.value })}
-          placeholder="https://..."
-          className="w-full px-4 py-2.5 rounded-xl border border-champagne-100 bg-canvas text-ink focus:outline-none focus:ring-2 focus:border-champagne focus:ring-champagne-100"
-        />
-      </div>
-
-      <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-champagne text-white font-semibold shadow-sm hover:bg-champagne-dark transition-colors"
-        >
-          <Save className="w-4 h-4" />
-          Salvar
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-6 py-2.5 rounded-full bg-white border border-champagne-200 text-ink-soft hover:bg-champagne-50 transition-colors"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
   );
 }

@@ -2,6 +2,18 @@ import type { Presente, Recado } from '@/types';
 
 export const EVENT_DATE = new Date('2027-04-10T18:00:00-03:00');
 
+// Textos derivados de EVENT_DATE: para mudar a data do evento, altere só a linha acima.
+const formatarEvento = (opcoes: Intl.DateTimeFormatOptions) =>
+  EVENT_DATE.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', ...opcoes });
+const mesEvento = formatarEvento({ month: 'long' });
+
+/** Ex.: "10 de Abril de 2027" */
+export const EVENT_DATA_TEXTO = `${formatarEvento({ day: 'numeric' })} de ${
+  mesEvento.charAt(0).toUpperCase() + mesEvento.slice(1)
+} de ${formatarEvento({ year: 'numeric' })}`;
+/** Ex.: "18h00" */
+export const EVENT_HORA_TEXTO = formatarEvento({ hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', 'h');
+
 export const NOIVOS_WHATSAPP = '5563984609954';
 
 export const ASTERA_INFO = {
@@ -16,126 +28,177 @@ export const EVENT_LOCATION = {
   wazeUrl: 'https://waze.com/ul?q=Gurupi%20Tocantins%20Brasil',
 };
 
+export const CATEGORIAS = ['Cozinha', 'Eletrodomésticos', 'Mesa Posta', 'Cama & Banho', 'Cotas Grandes'];
+
+/** Usado só quando o Supabase ainda não está configurado (modo demonstração). */
 export const mockPresentes: Presente[] = [
   {
     id: 'p1',
     titulo: 'Jogo de Panelas Antiaderente 7 Peças',
     categoria: 'Cozinha',
     imagem_url: 'https://images.pexels.com/photos/16927367/pexels-photo-16927367.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    modo: 'inteiro',
     valor: 299.90,
-    quantidade_total: 3,
-    quantidade_comprada: 1,
+    quantidade_total: 1,
+    valor_minimo: null,
+    permite_pessoalmente: true,
     ativo: true,
+    quantidade_ocupada: 1,
+    valor_ocupado: 299.90,
   },
   {
     id: 'p2',
     titulo: 'Cafeteira Espresso Automática',
     categoria: 'Cozinha',
     imagem_url: 'https://images.pexels.com/photos/32103303/pexels-photo-32103303.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    modo: 'inteiro',
     valor: 549.00,
-    quantidade_total: 2,
-    quantidade_comprada: 0,
+    quantidade_total: 1,
+    valor_minimo: null,
+    permite_pessoalmente: true,
     ativo: true,
+    quantidade_ocupada: 0,
+    valor_ocupado: 0,
   },
   {
     id: 'p3',
     titulo: 'Liquidificador Industrial 3L',
     categoria: 'Eletrodomésticos',
     imagem_url: 'https://images.pexels.com/photos/35443238/pexels-photo-35443238.png?auto=compress&cs=tinysrgb&h=650&w=940',
+    modo: 'inteiro',
     valor: 189.90,
-    quantidade_total: 4,
-    quantidade_comprada: 2,
+    quantidade_total: 1,
+    valor_minimo: null,
+    permite_pessoalmente: true,
     ativo: true,
+    quantidade_ocupada: 0,
+    valor_ocupado: 0,
   },
   {
     id: 'p4',
     titulo: 'Jogo de Pratos Cerâmica 24 Peças',
     categoria: 'Mesa Posta',
     imagem_url: 'https://images.pexels.com/photos/9440473/pexels-photo-9440473.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    modo: 'inteiro',
     valor: 159.90,
-    quantidade_total: 3,
-    quantidade_comprada: 0,
+    quantidade_total: 2,
+    valor_minimo: null,
+    permite_pessoalmente: true,
     ativo: true,
+    quantidade_ocupada: 0,
+    valor_ocupado: 0,
   },
   {
     id: 'p5',
     titulo: 'Jogo de Taças de Cristal 6 Peças',
     categoria: 'Mesa Posta',
     imagem_url: 'https://images.pexels.com/photos/28937080/pexels-photo-28937080.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    modo: 'inteiro',
     valor: 89.90,
-    quantidade_total: 5,
-    quantidade_comprada: 3,
+    quantidade_total: 2,
+    valor_minimo: null,
+    permite_pessoalmente: true,
     ativo: true,
+    quantidade_ocupada: 1,
+    valor_ocupado: 89.90,
   },
   {
     id: 'p6',
     titulo: 'Jogo de Cama King 300 Fios',
     categoria: 'Cama & Banho',
     imagem_url: 'https://images.pexels.com/photos/16951262/pexels-photo-16951262.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    modo: 'inteiro',
     valor: 249.90,
     quantidade_total: 2,
-    quantidade_comprada: 0,
+    valor_minimo: null,
+    permite_pessoalmente: true,
     ativo: true,
+    quantidade_ocupada: 0,
+    valor_ocupado: 0,
   },
   {
     id: 'p7',
-    titulo: 'Cota da Geladeira Frost Free',
+    titulo: 'Geladeira Frost Free',
     categoria: 'Cotas Grandes',
     imagem_url: 'https://images.pexels.com/photos/36573009/pexels-photo-36573009.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    valor: 899.00,
-    quantidade_total: 5,
-    quantidade_comprada: 1,
+    modo: 'cotas',
+    valor: 500.00,
+    quantidade_total: 12,
+    valor_minimo: null,
+    permite_pessoalmente: false,
     ativo: true,
+    quantidade_ocupada: 4,
+    valor_ocupado: 2000.00,
   },
   {
     id: 'p8',
     titulo: 'Faqueiro Inox 24 Peças',
     categoria: 'Mesa Posta',
     imagem_url: 'https://images.pexels.com/photos/18273385/pexels-photo-18273385.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    modo: 'inteiro',
     valor: 129.90,
-    quantidade_total: 3,
-    quantidade_comprada: 0,
+    quantidade_total: 1,
+    valor_minimo: null,
+    permite_pessoalmente: true,
     ativo: true,
+    quantidade_ocupada: 0,
+    valor_ocupado: 0,
   },
   {
     id: 'p9',
-    titulo: 'Cota do Fogão 5 Bocas',
+    titulo: 'Fogão 5 Bocas',
     categoria: 'Cotas Grandes',
     imagem_url: 'https://images.pexels.com/photos/14445303/pexels-photo-14445303.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    valor: 799.00,
-    quantidade_total: 5,
-    quantidade_comprada: 2,
+    modo: 'livre',
+    valor: 3500.00,
+    quantidade_total: 1,
+    valor_minimo: 100,
+    permite_pessoalmente: false,
     ativo: true,
+    quantidade_ocupada: 3,
+    valor_ocupado: 1250.00,
   },
   {
     id: 'p10',
     titulo: 'Panela de Pressão Elétrica',
     categoria: 'Cozinha',
     imagem_url: 'https://images.pexels.com/photos/36552082/pexels-photo-36552082.png?auto=compress&cs=tinysrgb&h=650&w=940',
+    modo: 'inteiro',
     valor: 199.90,
-    quantidade_total: 3,
-    quantidade_comprada: 0,
+    quantidade_total: 1,
+    valor_minimo: null,
+    permite_pessoalmente: true,
     ativo: true,
+    quantidade_ocupada: 0,
+    valor_ocupado: 0,
   },
   {
     id: 'p11',
     titulo: 'Kit Aquecedor de Almoço',
     categoria: 'Cozinha',
     imagem_url: 'https://images.pexels.com/photos/7736770/pexels-photo-7736770.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    modo: 'inteiro',
     valor: 49.90,
-    quantidade_total: 6,
-    quantidade_comprada: 4,
+    quantidade_total: 3,
+    valor_minimo: null,
+    permite_pessoalmente: true,
     ativo: true,
+    quantidade_ocupada: 2,
+    valor_ocupado: 99.80,
   },
   {
     id: 'p12',
-    titulo: 'Cota da Lavadora de Roupas',
+    titulo: 'Lavadora de Roupas',
     categoria: 'Cotas Grandes',
     imagem_url: 'https://images.pexels.com/photos/38609262/pexels-photo-38609262.png?auto=compress&cs=tinysrgb&h=650&w=940',
-    valor: 1299.00,
-    quantidade_total: 5,
-    quantidade_comprada: 0,
+    modo: 'cotas',
+    valor: 300.00,
+    quantidade_total: 10,
+    valor_minimo: null,
+    permite_pessoalmente: false,
     ativo: true,
+    quantidade_ocupada: 0,
+    valor_ocupado: 0,
   },
 ];
 
@@ -186,19 +249,24 @@ export const mockRecados: Recado[] = [
 
 export const faqItems = [
   {
-    pergunta: 'Como funciona a lista virtual de presentes?',
+    pergunta: 'Como funciona a lista de presentes?',
     resposta:
-      'Em vez de presentes físicos que podem se duplicar, transformamos tudo em cotas virtuais. Você escolhe um item, paga via Pix e o valor integral vai para os noivos montarem o lar do jeito que sonharam.',
+      'Você escolhe um item na vitrine e presenteia pelo site com Pix ou cartão. Os presentes grandes (como a geladeira) são divididos em cotas ou aceitam o valor que você quiser, assim todo mundo pode participar. Tudo que já foi dado sai da lista automaticamente, para não ter presente repetido.',
+  },
+  {
+    pergunta: 'Posso comprar o presente e levar pessoalmente?',
+    resposta:
+      'Pode sim, nos presentes marcados com "Pode dar pessoalmente". Mas é muito importante: clique em "Presentear" e escolha "Vou dar pessoalmente". Assim o presente sai da lista e ninguém compra o mesmo item. Se você não marcar no site, não temos como saber e o presente pode acabar repetido.',
   },
   {
     pergunta: 'Como funciona o sorteio dos brindes?',
     resposta:
-      'A cada R$ 50,00 em presentes, você ganha 1 número da sorte automaticamente. Por exemplo: se você presenteia com R$ 150,00, recebe 3 números. O sorteio acontece presencialmente no dia do Chá de Panela, em 10 de Abril de 2027.',
+      `A cada R$ 50,00 em presentes pagos pelo site, você ganha 1 número da sorte automaticamente. Por exemplo: se você presenteia com R$ 150,00, recebe 3 números. O sorteio acontece presencialmente no dia do Chá de Panela, em ${EVENT_DATA_TEXTO}.`,
   },
   {
-    pergunta: 'Como faço o pagamento via Pix?',
+    pergunta: 'Como faço o pagamento?',
     resposta:
-      'Ao clicar em "Presentear os Noivos" em qualquer item, você preenche seus dados e um QR Code Pix é gerado na hora. Basta copiar o código ou escanear o QR Code com o app do seu banco. A confirmação é automática!',
+      'Ao clicar em "Presentear" você preenche seus dados e escolhe Pix ou cartão de crédito. No Pix, um QR Code é gerado na hora; no cartão, abrimos a página segura de pagamento do Asaas. O CPF é pedido porque o Asaas exige para emitir o pagamento. A confirmação é automática!',
   },
   {
     pergunta: 'Posso escolher mais de um presente?',
@@ -208,11 +276,11 @@ export const faqItems = [
   {
     pergunta: 'O que acontece depois que eu pago?',
     resposta:
-      'Assim que o Pix é confirmado, seus números da sorte aparecem na tela. Você também pode enviar uma mensagem de bênção direto para o WhatsApp do noivo com um clique, usando uma mensagem já formatada.',
+      'Assim que o pagamento é confirmado, seus números da sorte aparecem na tela. Você também pode enviar uma mensagem de bênção direto para o WhatsApp do noivo com um clique, usando uma mensagem já formatada.',
   },
   {
     pergunta: 'Preciso levar algo no dia do evento?',
     resposta:
-      'Não! O site é a nossa lista de presentes. No dia do Chá de Panela, venha com seu coração aberto para celebrar conosco. O sorteio dos brindes acontece presencialmente.',
+      'Se você presenteou pelo site, não! Venha com seu coração aberto para celebrar conosco. Se você marcou "Vou dar pessoalmente", é só levar o presente no dia. O sorteio dos brindes acontece presencialmente.',
   },
 ];
