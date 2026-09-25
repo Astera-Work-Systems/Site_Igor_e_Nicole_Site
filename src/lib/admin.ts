@@ -12,8 +12,14 @@ function db() {
 }
 
 export async function entrar(email: string, senha: string) {
-  const { error } = await db().auth.signInWithPassword({ email, password: senha });
-  if (error) throw new Error('E-mail ou senha incorretos.');
+  const { error } = await db().auth.signInWithPassword({ email: email.trim(), password: senha });
+  if (!error) return;
+  console.error('Login do painel falhou:', error.code, error.message);
+  if (error.code === 'email_not_confirmed') {
+    throw new Error('E-mail ainda não confirmado. No Supabase → Authentication → Users, confirme o usuário.');
+  }
+  if (error.code === 'invalid_credentials') throw new Error('E-mail ou senha incorretos.');
+  throw new Error(`Não foi possível entrar: ${error.message}`);
 }
 
 export async function sair() {

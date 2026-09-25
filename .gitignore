@@ -22,3 +22,5 @@ dist-ssr
 *.sw?
 .env
 .2026-09-24-asaas-e-presentes.md
+# Supabase CLI (dados locais do link)
+supabase/.temp/
