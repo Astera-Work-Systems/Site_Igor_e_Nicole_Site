@@ -18,6 +18,9 @@ const BASE_URL = (Deno.env.get('ASAAS_BASE_URL') ?? 'https://api-sandbox.asaas.c
 const SPLIT_WALLET_ID = (Deno.env.get('ASAAS_SPLIT_WALLET_ID') ?? '').trim();
 const SPLIT_PERCENTUAL = Number(Deno.env.get('ASAAS_SPLIT_PERCENTUAL') ?? '50');
 
+/** Menor valor que o Asaas aceita numa cobrança Pix ou cartão. */
+export const VALOR_MINIMO_ASAAS = 5;
+
 export type AsaasStatus =
   | 'PENDING'
   | 'RECEIVED'

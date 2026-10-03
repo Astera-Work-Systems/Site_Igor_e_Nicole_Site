@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import type { CheckoutStep, Configuracoes, Presente } from '@/types';
 import { formatarValor, calcularCupons, formatarCupom } from '@/lib/utils/cupons';
-import { disponibilidade } from '@/lib/utils/presentes';
+import { disponibilidade, VALOR_MINIMO_PAGAMENTO } from '@/lib/utils/presentes';
 import { gerarLinkWhatsApp } from '@/lib/utils/whatsapp';
 import { EVENT_DATA_TEXTO } from '@/data/mockData';
 import { consultarContribuicao, criarContribuicao, type RespostaContribuicao } from '@/lib/api';
@@ -139,6 +139,13 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
   const handleEnviar = async () => {
     setErroGeral('');
     if (!validarDados()) return;
+    if (!pessoalmente && valorTotal < VALOR_MINIMO_PAGAMENTO) {
+      setErroGeral(
+        `Pagamentos pelo site precisam ser de pelo menos ${formatarValor(VALOR_MINIMO_PAGAMENTO)} (regra do Asaas).` +
+          (presente.modo === 'livre' ? '' : ' Escolha mais unidades/cotas.'),
+      );
+      return;
+    }
     setEnviando(true);
     try {
       const r = await criarContribuicao({

@@ -16,10 +16,13 @@ export interface Disponibilidade {
   rotuloValor: string;
 }
 
+/** O Asaas não emite cobrança (Pix ou cartão) abaixo de R$ 5,00. "Pessoalmente" não tem mínimo. */
+export const VALOR_MINIMO_PAGAMENTO = 5;
+
 export function disponibilidade(p: Presente): Disponibilidade {
   if (p.modo === 'livre') {
     const restanteValor = Math.max(0, p.valor - p.valor_ocupado);
-    const minimo = Math.min(p.valor_minimo ?? 1, restanteValor);
+    const minimo = Math.min(Math.max(p.valor_minimo ?? 0, VALOR_MINIMO_PAGAMENTO), restanteValor);
     return {
       esgotado: restanteValor <= 0,
       progresso: Math.min(100, (p.valor_ocupado / p.valor) * 100),

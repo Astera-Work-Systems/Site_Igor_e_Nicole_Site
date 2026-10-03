@@ -648,13 +648,15 @@ function PresenteForm({
             <input
               type="number"
               step="0.01"
-              min="0.01"
+              min="5"
               value={form.valor_minimo ?? ''}
               onChange={(e) => setForm({ ...form, valor_minimo: parseFloat(e.target.value) || null })}
-              placeholder="0,01"
+              placeholder="5,00"
               className={inputClass}
             />
-            <p className="text-xs text-ink-muted mt-1">Em branco = qualquer valor a partir de R$ 0,01.</p>
+            <p className="text-xs text-ink-muted mt-1">
+              Mínimo de R$ 5,00 (o Asaas não aceita pagamentos menores). Em branco = R$ 5,00.
+            </p>
           </div>
         )}
       </div>

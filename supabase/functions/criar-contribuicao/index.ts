@@ -1,4 +1,4 @@
-import { criarCobranca, obterOuCriarCliente, obterPixQrCode } from '../_shared/asaas.ts';
+import { criarCobranca, obterOuCriarCliente, obterPixQrCode, VALOR_MINIMO_ASAAS } from '../_shared/asaas.ts';
 import { cancelar, confirmar, db, listarCupons, type Contribuicao } from '../_shared/db.ts';
 import { corsHeaders, erro, json } from '../_shared/http.ts';
 
@@ -51,6 +51,12 @@ Deno.serve(async (req) => {
   });
   if (erroReserva) return erro(erroReserva.message);
   const c = reserva as Contribuicao;
+
+  // O Asaas recusa cobranças abaixo de R$ 5,00; avisa com clareza em vez do erro genérico.
+  if (e.tipo === 'site' && Number(c.valor) < VALOR_MINIMO_ASAAS) {
+    await cancelar(c.id).catch(console.error);
+    return erro('Pagamentos pelo site precisam ser de pelo menos R$ 5,00 (regra do Asaas).');
+  }
 
   // "Vou dar pessoalmente": não há pagamento, a reserva já vale.
   if (e.tipo === 'pessoalmente') {
