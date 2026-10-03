@@ -56,6 +56,7 @@ function App() {
         <GiftVitrine
           presentes={presentes}
           erro={erroPresentes}
+          maxParcelas={config.max_parcelas}
           onTentarNovamente={carregarPresentes}
           onSelectPresente={setPresenteSelecionado}
         />

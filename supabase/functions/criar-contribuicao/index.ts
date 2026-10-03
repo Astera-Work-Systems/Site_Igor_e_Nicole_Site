@@ -7,7 +7,8 @@ interface Entrada {
   tipo: 'site' | 'pessoalmente';
   forma_pagamento?: 'pix' | 'cartao';
   quantidade?: number;
-  valor?: number;
+  /** Só no cartão; 1 = à vista. */
+  parcelas?: number;
   nome: string;
   whatsapp: string;
   cpf?: string;
@@ -38,13 +39,20 @@ Deno.serve(async (req) => {
     if (e.forma_pagamento !== 'pix' && e.forma_pagamento !== 'cartao') return erro('Escolha Pix ou cartão.');
     if (!cpfValido(cpf)) return erro('Informe um CPF válido (é exigido pelo Asaas para emitir o pagamento).');
   }
+  const parcelas = e.tipo === 'site' && e.forma_pagamento === 'cartao' ? (e.parcelas ?? 1) : 1;
+  if (!Number.isInteger(parcelas) || parcelas < 1) return erro('Número de parcelas inválido.');
+  if (parcelas > 1) {
+    const { data: config } = await db.from('configuracoes').select('max_parcelas').eq('id', 1).maybeSingle();
+    const max = Number(config?.max_parcelas ?? 1);
+    if (parcelas > max) return erro(max > 1 ? `Parcele em até ${max}x.` : 'O parcelamento não está disponível.');
+  }
 
   const { data: reserva, error: erroReserva } = await db.rpc('reservar_contribuicao', {
     p_presente_id: e.presente_id,
     p_tipo: e.tipo,
     p_forma_pagamento: e.forma_pagamento ?? null,
     p_quantidade: e.quantidade ?? 1,
-    p_valor: e.valor ?? null,
+    p_valor: null,
     p_nome: nome,
     p_whatsapp: whatsapp,
     p_mensagem: mensagem,
@@ -56,6 +64,10 @@ Deno.serve(async (req) => {
   if (e.tipo === 'site' && Number(c.valor) < VALOR_MINIMO_ASAAS) {
     await cancelar(c.id).catch(console.error);
     return erro('Pagamentos pelo site precisam ser de pelo menos R$ 5,00 (regra do Asaas).');
+  }
+  if (Number(c.valor) / parcelas < VALOR_MINIMO_ASAAS) {
+    await cancelar(c.id).catch(console.error);
+    return erro('Cada parcela precisa ser de pelo menos R$ 5,00 (regra do Asaas). Escolha menos parcelas.');
   }
 
   // "Vou dar pessoalmente": não há pagamento, a reserva já vale.
@@ -75,6 +87,7 @@ Deno.serve(async (req) => {
       clienteId,
       forma: e.forma_pagamento!,
       valor: Number(c.valor),
+      parcelas,
       descricao: `Presente para Igor & Nicole: ${c.presente_titulo}`,
       referencia: c.id,
     });
@@ -85,6 +98,8 @@ Deno.serve(async (req) => {
         asaas_customer_id: clienteId,
         asaas_payment_id: cobranca.id,
         asaas_invoice_url: cobranca.invoiceUrl,
+        asaas_installment_id: cobranca.installment ?? null,
+        parcelas,
       })
       .eq('id', c.id);
 
@@ -100,7 +115,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error(err);
-    // Libera a cota: sem cobrança, a reserva não faz sentido.
+    // Libera o presente: sem cobrança, a reserva não faz sentido.
     await cancelar(c.id).catch(console.error);
     return erro('Não conseguimos gerar o pagamento agora. Tente novamente em instantes.', 502);
   }

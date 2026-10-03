@@ -1,28 +1,21 @@
 /**
- * Como o presente é oferecido (escolhido pelos noivos no painel):
- *  - inteiro: sem cota. `valor` = preço de 1 unidade, `quantidade_total` = unidades desejadas.
- *  - cotas:   `valor` = valor de cada cota, `quantidade_total` = número de cotas.
- *  - livre:   `valor` = meta total; o convidado escolhe quanto dar (mínimo `valor_minimo`).
+ * Cada convidado dá o presente inteiro (sem cotas nem vaquinha; os caros podem ser parcelados no cartão).
+ * `valor` = preço de 1 unidade, `quantidade_total` = unidades desejadas.
  */
-export type ModoPresente = 'inteiro' | 'cotas' | 'livre';
-
 export interface Presente {
   id: string;
   titulo: string;
   categoria: string;
   imagem_url: string;
-  modo: ModoPresente;
   valor: number;
   quantidade_total: number;
-  valor_minimo: number | null;
   permite_pessoalmente: boolean;
   ativo: boolean;
   /** Calculado no banco (view presentes_vitrine): confirmados + pagamentos pendentes no prazo. */
   quantidade_ocupada: number;
-  valor_ocupado: number;
 }
 
-export type PresenteEditavel = Omit<Presente, 'quantidade_ocupada' | 'valor_ocupado'>;
+export type PresenteEditavel = Omit<Presente, 'quantidade_ocupada'>;
 
 export type TipoContribuicao = 'site' | 'pessoalmente';
 export type FormaPagamento = 'pix' | 'cartao';
@@ -37,6 +30,8 @@ export interface Contribuicao {
   status: StatusContribuicao;
   quantidade: number;
   valor: number;
+  /** Parcelas no cartão (1 = à vista). */
+  parcelas: number;
   nome_convidado: string;
   whatsapp: string;
   mensagem: string | null;
@@ -68,7 +63,9 @@ export interface Configuracoes {
   cupom_pessoalmente: boolean;
   valor_por_cupom: number;
   minutos_reserva: number;
+  /** Máximo de parcelas no cartão (1 = só à vista). */
+  max_parcelas: number;
 }
 
 export type CheckoutStep = 'dados' | 'pagamento' | 'sucesso';
-export type FiltroPresente = 'todos' | 'ate100' | '100a300' | 'cotas';
+export type FiltroPresente = 'todos' | 'ate100' | '100a300' | 'acima300';

@@ -16,6 +16,7 @@ export interface Contribuicao {
   status: 'pendente' | 'confirmado' | 'cancelado';
   quantidade: number;
   valor: number;
+  parcelas: number;
   nome_convidado: string;
   whatsapp: string;
   mensagem: string | null;

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import type { CheckoutStep, Configuracoes, Presente } from '@/types';
 import { formatarValor, calcularCupons, formatarCupom } from '@/lib/utils/cupons';
-import { disponibilidade, VALOR_MINIMO_PAGAMENTO } from '@/lib/utils/presentes';
+import { disponibilidade, parcelasPermitidas, VALOR_MINIMO_PAGAMENTO } from '@/lib/utils/presentes';
 import { gerarLinkWhatsApp } from '@/lib/utils/whatsapp';
 import { EVENT_DATA_TEXTO } from '@/data/mockData';
 import { consultarContribuicao, criarContribuicao, type RespostaContribuicao } from '@/lib/api';
@@ -28,7 +28,7 @@ interface Props {
   presente: Presente | null;
   config: Configuracoes;
   onClose: () => void;
-  /** Recarrega a vitrine (a cota reservada/paga some da lista). */
+  /** Recarrega a vitrine (o presente reservado/pago some da lista). */
   onContribuicaoRegistrada: () => void;
 }
 
@@ -48,7 +48,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
   const [step, setStep] = useState<CheckoutStep>('dados');
   const [forma, setForma] = useState<Forma>('pix');
   const [quantidade, setQuantidade] = useState(1);
-  const [valorLivre, setValorLivre] = useState('');
+  const [parcelas, setParcelas] = useState(1);
   const [dados, setDados] = useState<DadosConvidado>(DADOS_VAZIOS);
   const [erros, setErros] = useState<Record<string, string>>({});
   const [erroGeral, setErroGeral] = useState('');
@@ -62,7 +62,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
       setStep('dados');
       setForma('pix');
       setQuantidade(1);
-      setValorLivre('');
+      setParcelas(1);
       setDados(DADOS_VAZIOS);
       setErros({});
       setErroGeral('');
@@ -116,9 +116,12 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
   if (!presente) return null;
 
   const d = disponibilidade(presente);
-  const podePessoalmente = presente.modo === 'inteiro' && presente.permite_pessoalmente;
+  const podePessoalmente = presente.permite_pessoalmente;
   const pessoalmente = forma === 'pessoalmente';
-  const valorTotal = presente.modo === 'livre' ? lerValor(valorLivre) : presente.valor * quantidade;
+  const valorTotal = presente.valor * quantidade;
+  const maxParcelas = parcelasPermitidas(valorTotal, config.max_parcelas);
+  // Se o convidado diminuir a quantidade, o número de parcelas acompanha o novo limite.
+  const parcelasEscolhidas = forma === 'cartao' ? Math.min(parcelas, maxParcelas) : 1;
   const ganhaCupons = !pessoalmente || config.cupom_pessoalmente;
   const qtdCupons = ganhaCupons ? calcularCupons(valorTotal, config.valor_por_cupom) : 0;
 
@@ -127,11 +130,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
     if (dados.nome.trim().length < 3) e.nome = 'Por favor, informe seu nome completo.';
     if (dados.whatsapp.replace(/\D/g, '').length < 10) e.whatsapp = 'Por favor, informe um WhatsApp válido com DDD.';
     if (!pessoalmente && dados.cpf.replace(/\D/g, '').length !== 11) e.cpf = 'Informe os 11 dígitos do CPF.';
-    if (presente.modo === 'livre') {
-      if (!(valorTotal >= d.valorEntrada && valorTotal <= d.restanteValor)) {
-        e.valor = `Escolha um valor entre ${formatarValor(d.valorEntrada)} e ${formatarValor(d.restanteValor)}.`;
-      }
-    }
     setErros(e);
     return Object.keys(e).length === 0;
   };
@@ -141,8 +139,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
     if (!validarDados()) return;
     if (!pessoalmente && valorTotal < VALOR_MINIMO_PAGAMENTO) {
       setErroGeral(
-        `Pagamentos pelo site precisam ser de pelo menos ${formatarValor(VALOR_MINIMO_PAGAMENTO)} (regra do Asaas).` +
-          (presente.modo === 'livre' ? '' : ' Escolha mais unidades/cotas.'),
+        `Pagamentos pelo site precisam ser de pelo menos ${formatarValor(VALOR_MINIMO_PAGAMENTO)} (regra do Asaas). Escolha mais unidades.`,
       );
       return;
     }
@@ -152,8 +149,8 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
         presente_id: presente.id,
         tipo: pessoalmente ? 'pessoalmente' : 'site',
         forma_pagamento: pessoalmente ? undefined : forma,
-        quantidade: presente.modo === 'livre' ? 1 : quantidade,
-        valor: presente.modo === 'livre' ? valorTotal : undefined,
+        quantidade,
+        parcelas: parcelasEscolhidas,
         nome: dados.nome,
         whatsapp: dados.whatsapp,
         cpf: pessoalmente ? undefined : dados.cpf,
@@ -253,10 +250,10 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
           {step === 'dados' && (
             <div className="space-y-5 animate-slide-up">
               {/* Quanto */}
-              {presente.modo !== 'livre' && d.restanteQtd > 1 && (
+              {d.restanteQtd > 1 && (
                 <div>
                   <label className="block text-sm font-medium text-ink-soft mb-1.5">
-                    {presente.modo === 'cotas' ? 'Quantas cotas?' : 'Quantas unidades?'}
+                    Quantas unidades?
                   </label>
                   <div className="flex items-center gap-3">
                     <button
@@ -280,42 +277,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                       × {formatarValor(presente.valor)} · {d.restanteTexto}
                     </span>
                   </div>
-                </div>
-              )}
-
-              {presente.modo === 'livre' && (
-                <div>
-                  <label className="block text-sm font-medium text-ink-soft mb-1.5">Quanto você quer dar? *</label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {[100, 250, 500, 1000]
-                      .filter((v) => v >= d.valorEntrada && v <= d.restanteValor)
-                      .map((v) => (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setValorLivre(String(v))}
-                          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                            lerValor(valorLivre) === v
-                              ? 'bg-champagne text-white border-champagne'
-                              : 'bg-white border-champagne-100 text-ink-soft hover:bg-champagne-50'
-                          }`}
-                        >
-                          {formatarValor(v)}
-                        </button>
-                      ))}
-                  </div>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={valorLivre}
-                    onChange={(e) => setValorLivre(e.target.value)}
-                    placeholder={`Outro valor (mín. ${formatarValor(d.valorEntrada)})`}
-                    className={inputClass(erros.valor)}
-                  />
-                  <p className="text-xs text-ink-muted mt-1">
-                    Faltam {formatarValor(d.restanteValor)} para completar este presente.
-                  </p>
-                  {erros.valor && <p className="text-xs text-error mt-1">{erros.valor}</p>}
                 </div>
               )}
 
@@ -345,6 +306,26 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                     })}
                 </div>
               </div>
+
+              {forma === 'cartao' && maxParcelas > 1 && (
+                <div>
+                  <label className="block text-sm font-medium text-ink-soft mb-1.5">Em quantas vezes?</label>
+                  <select
+                    value={parcelasEscolhidas}
+                    onChange={(e) => setParcelas(Number(e.target.value))}
+                    className={inputClass()}
+                  >
+                    {Array.from({ length: maxParcelas }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>
+                        {n === 1 ? `À vista — ${formatarValor(valorTotal)}` : `${n}x de ${formatarValor(valorTotal / n)}`}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-ink-muted mt-1">
+                    Os números da sorte valem pelo valor total do presente, mesmo parcelado.
+                  </p>
+                </div>
+              )}
 
               {pessoalmente && (
                 <div className="rounded-xl border border-champagne-200 bg-champagne-50 p-4 text-sm text-ink-soft space-y-1.5">
@@ -609,14 +590,4 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
       </div>
     </div>
   );
-}
-
-/** Aceita "1500", "1.500,00", "1500,5" etc. */
-function lerValor(texto: string): number {
-  const limpo = texto.replace(/[^\d,.]/g, '');
-  const soMilhar = /^\d{1,3}(\.\d{3})+$/.test(limpo); // "1.500" = mil e quinhentos
-  const normalizado =
-    limpo.includes(',') || soMilhar ? limpo.replace(/\./g, '').replace(',', '.') : limpo;
-  const n = Number(normalizado);
-  return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
 }

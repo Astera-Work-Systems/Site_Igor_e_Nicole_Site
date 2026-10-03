@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
 import { compactarImagem } from '@/lib/utils/imagem';
-import { VALOR_MINIMO_PAGAMENTO } from '@/lib/utils/presentes';
 import type { Configuracoes, Contribuicao, CupomSorteio, Presente, PresenteEditavel } from '@/types';
 
 /**
@@ -58,19 +57,14 @@ export async function criarPresentes(lista: PresenteEditavel[]): Promise<void> {
   if (error) throw error;
 }
 
-// O Asaas não emite cobrança abaixo de R$ 5,00.
-const VALOR_MINIMO_LIVRE = VALOR_MINIMO_PAGAMENTO;
-
 function camposPresente(p: PresenteEditavel) {
   return {
     titulo: p.titulo,
     categoria: p.categoria,
     imagem_url: p.imagem_url,
-    modo: p.modo,
     valor: p.valor,
-    quantidade_total: p.modo === 'livre' ? 1 : p.quantidade_total,
-    valor_minimo: p.modo === 'livre' ? Math.max(p.valor_minimo ?? 0, VALOR_MINIMO_LIVRE) : null,
-    permite_pessoalmente: p.modo === 'inteiro' && p.permite_pessoalmente,
+    quantidade_total: p.quantidade_total,
+    permite_pessoalmente: p.permite_pessoalmente,
     ativo: p.ativo,
   };
 }
@@ -137,6 +131,7 @@ export async function salvarConfiguracoes(c: Configuracoes): Promise<void> {
       cupom_pessoalmente: c.cupom_pessoalmente,
       valor_por_cupom: c.valor_por_cupom,
       minutos_reserva: c.minutos_reserva,
+      max_parcelas: c.max_parcelas,
       updated_at: new Date().toISOString(),
     })
     .eq('id', 1);

@@ -19,6 +19,7 @@ export const CONFIG_PADRAO: Configuracoes = {
   cupom_pessoalmente: false,
   valor_por_cupom: 50,
   minutos_reserva: 30,
+  max_parcelas: 12,
 };
 
 export async function listarPresentes(): Promise<Presente[]> {
@@ -64,7 +65,8 @@ export interface NovaContribuicao {
   tipo: TipoContribuicao;
   forma_pagamento?: FormaPagamento;
   quantidade?: number;
-  valor?: number;
+  /** Só no cartão; 1 = à vista. */
+  parcelas?: number;
   nome: string;
   whatsapp: string;
   cpf?: string;
@@ -113,7 +115,7 @@ const mock = (() => {
     async criar(e: NovaContribuicao): Promise<RespostaContribuicao> {
       await new Promise((r) => setTimeout(r, 1200));
       const presente = mockPresentes.find((p) => p.id === e.presente_id)!;
-      const valor = presente.modo === 'livre' ? e.valor ?? 0 : presente.valor * (e.quantidade ?? 1);
+      const valor = presente.valor * (e.quantidade ?? 1);
       const deveGerar = e.tipo === 'site' || CONFIG_PADRAO.cupom_pessoalmente;
       const cupons = Array.from(
         { length: deveGerar ? Math.floor(valor / CONFIG_PADRAO.valor_por_cupom) : 0 },

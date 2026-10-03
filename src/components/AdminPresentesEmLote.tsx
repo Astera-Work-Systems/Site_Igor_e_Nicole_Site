@@ -3,8 +3,6 @@ import { Image as ImageIcon, Images, Loader2, Save, Trash2, Upload, X } from 'lu
 import { CATEGORIAS } from '@/data/mockData';
 import * as admin from '@/lib/admin';
 import { formatarValor } from '@/lib/utils/cupons';
-import { MODOS_PRESENTE } from '@/lib/utils/presentes';
-import type { ModoPresente } from '@/types';
 
 /**
  * Cadastro de vários presentes de uma vez: cola uma lista (do Excel, Google Planilhas
@@ -17,14 +15,13 @@ interface Linha {
   valor: number;
   quantidade: number;
   categoria: string;
-  modo: ModoPresente;
   imagem_url: string;
   enviando: boolean;
 }
 
 const EXEMPLO = `Jogo de panelas; 299,90; 2; Cozinha
 Air fryer; 450
-Cota da geladeira; 100; 10; Cotas Grandes
+Geladeira; 4.500; 1; Eletrodomésticos
 Toalhas de banho; R$ 89,90; 3; Cama & Banho`;
 
 /** Aceita "1.299,90", "R$ 89,90", "1.000", "450" e "89.9". */
@@ -53,7 +50,6 @@ function lerLista(texto: string, categoriaPadrao: string): Linha[] {
         valor: lerValor(valor),
         quantidade: Math.max(1, parseInt(qtd) || 1),
         categoria,
-        modo: categoria === 'Cotas Grandes' ? 'cotas' : 'inteiro',
         imagem_url: '',
         enviando: false,
       };
@@ -125,10 +121,8 @@ export function AdminPresentesEmLote({ onSalvo, onCancel }: { onSalvo: () => voi
           titulo: l.titulo.trim(),
           categoria: l.categoria,
           imagem_url: l.imagem_url,
-          modo: l.modo,
           valor: l.valor,
           quantidade_total: l.quantidade,
-          valor_minimo: null,
           permite_pessoalmente: true,
           ativo: true,
         })),
@@ -261,38 +255,24 @@ export function AdminPresentesEmLote({ onSalvo, onCancel }: { onSalvo: () => voi
                     placeholder="Nome"
                     className={`${inputCompacto} flex-1 min-w-[10rem]`}
                   />
-                  <select
-                    value={l.modo}
-                    onChange={(e) => alterar(l.chave, { modo: e.target.value as ModoPresente })}
-                    className={`${inputCompacto} w-32`}
-                    title="Como o presente é dado"
-                  >
-                    {(Object.keys(MODOS_PRESENTE) as ModoPresente[]).map((m) => (
-                      <option key={m} value={m}>
-                        {MODOS_PRESENTE[m].nome}
-                      </option>
-                    ))}
-                  </select>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
                     value={l.valor || ''}
                     onChange={(e) => alterar(l.chave, { valor: parseFloat(e.target.value) || 0 })}
-                    placeholder={l.modo === 'livre' ? 'Meta R$' : 'Valor R$'}
-                    title={l.modo === 'livre' ? 'Meta total' : l.modo === 'cotas' ? 'Valor de cada cota' : 'Valor'}
+                    placeholder="Valor R$"
+                    title="Valor"
                     className={`${inputCompacto} w-28`}
                   />
-                  {l.modo !== 'livre' && (
-                    <input
-                      type="number"
-                      min="1"
-                      value={l.quantidade}
-                      onChange={(e) => alterar(l.chave, { quantidade: Math.max(1, parseInt(e.target.value) || 1) })}
-                      title={l.modo === 'cotas' ? 'Número de cotas' : 'Quantidade'}
-                      className={`${inputCompacto} w-20`}
-                    />
-                  )}
+                  <input
+                    type="number"
+                    min="1"
+                    value={l.quantidade}
+                    onChange={(e) => alterar(l.chave, { quantidade: Math.max(1, parseInt(e.target.value) || 1) })}
+                    title="Quantidade"
+                    className={`${inputCompacto} w-20`}
+                  />
                   <select
                     value={l.categoria}
                     onChange={(e) => alterar(l.chave, { categoria: e.target.value })}
@@ -318,9 +298,7 @@ export function AdminPresentesEmLote({ onSalvo, onCancel }: { onSalvo: () => voi
           <p className="text-xs text-ink-muted flex items-center gap-1.5">
             <ImageIcon className="w-3.5 h-3.5" />
             {linhas.filter((l) => l.imagem_url).length} de {linhas.length} com foto · total da lista:{' '}
-            {formatarValor(
-              linhas.reduce((s, l) => s + (l.modo === 'livre' ? l.valor : l.valor * l.quantidade), 0),
-            )}
+            {formatarValor(linhas.reduce((s, l) => s + l.valor * l.quantidade, 0))}
           </p>
         </>
       )}

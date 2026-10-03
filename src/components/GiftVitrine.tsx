@@ -3,11 +3,13 @@ import { Search, SlidersHorizontal, CheckCircle2, Gift, HandHeart, Info, Loader2
 import type { Presente, FiltroPresente } from '@/types';
 import { CATEGORIAS } from '@/data/mockData';
 import { formatarValor } from '@/lib/utils/cupons';
-import { disponibilidade } from '@/lib/utils/presentes';
+import { disponibilidade, parcelasPermitidas } from '@/lib/utils/presentes';
 
 interface Props {
   presentes: Presente[] | null;
   erro: boolean;
+  /** Máximo de parcelas no cartão (configuração do painel). */
+  maxParcelas: number;
   onTentarNovamente: () => void;
   onSelectPresente: (presente: Presente) => void;
 }
@@ -16,10 +18,10 @@ const filtros: { label: string; value: FiltroPresente }[] = [
   { label: 'Todos os presentes', value: 'todos' },
   { label: 'Até R$ 100', value: 'ate100' },
   { label: 'R$ 100 a R$ 300', value: '100a300' },
-  { label: 'Cotas e vaquinhas', value: 'cotas' },
+  { label: 'Acima de R$ 300', value: 'acima300' },
 ];
 
-export default function GiftVitrine({ presentes, erro, onTentarNovamente, onSelectPresente }: Props) {
+export default function GiftVitrine({ presentes, erro, maxParcelas, onTentarNovamente, onSelectPresente }: Props) {
   const [categoriaAtiva, setCategoriaAtiva] = useState('Todos');
   const [filtroAtivo, setFiltroAtivo] = useState<FiltroPresente>('todos');
   const [busca, setBusca] = useState('');
@@ -38,11 +40,9 @@ export default function GiftVitrine({ presentes, erro, onTentarNovamente, onSele
       lista = lista.filter((p) => p.categoria === categoriaAtiva);
     }
 
-    // Filtra pelo menor valor que dá para presentear (unidade, cota ou mínimo do valor livre).
-    const entrada = (p: Presente) => disponibilidade(p).valorEntrada;
-    if (filtroAtivo === 'ate100') lista = lista.filter((p) => entrada(p) <= 100);
-    else if (filtroAtivo === '100a300') lista = lista.filter((p) => entrada(p) > 100 && entrada(p) <= 300);
-    else if (filtroAtivo === 'cotas') lista = lista.filter((p) => p.modo !== 'inteiro');
+    if (filtroAtivo === 'ate100') lista = lista.filter((p) => p.valor <= 100);
+    else if (filtroAtivo === '100a300') lista = lista.filter((p) => p.valor > 100 && p.valor <= 300);
+    else if (filtroAtivo === 'acima300') lista = lista.filter((p) => p.valor > 300);
 
     if (busca.trim()) {
       const termo = busca.toLowerCase();
@@ -64,7 +64,7 @@ export default function GiftVitrine({ presentes, erro, onTentarNovamente, onSele
             Vitrine de Presentes
           </h2>
           <p className="text-ink-muted max-w-2xl mx-auto">
-            Presenteie por Pix ou cartão — os presentes grandes podem ser divididos em cotas.
+            Presenteie por Pix ou cartão — os presentes de valor mais alto podem ser parcelados no cartão.
             Ao presentear pelo site, você recebe automaticamente números da sorte para o sorteio
             presencial.
           </p>
@@ -159,6 +159,7 @@ export default function GiftVitrine({ presentes, erro, onTentarNovamente, onSele
             {presentesFiltrados.map((presente, i) => {
               const d = disponibilidade(presente);
               const esgotado = d.esgotado;
+              const parcelas = parcelasPermitidas(presente.valor, maxParcelas);
 
               return (
                 <div
@@ -188,7 +189,7 @@ export default function GiftVitrine({ presentes, erro, onTentarNovamente, onSele
                     <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-medium text-ink-soft">
                       {presente.categoria}
                     </span>
-                    {presente.modo === 'inteiro' && presente.permite_pessoalmente && !esgotado && (
+                    {presente.permite_pessoalmente && !esgotado && (
                       <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-medium text-champagne-dark">
                         <HandHeart className="w-3.5 h-3.5" /> Pode dar pessoalmente
                       </span>
@@ -218,10 +219,13 @@ export default function GiftVitrine({ presentes, erro, onTentarNovamente, onSele
                     {/* Valor + CTA */}
                     <div className="flex items-end justify-between">
                       <div>
-                        <p className="text-xs text-ink-muted">{d.rotuloValor}</p>
-                        <p className="font-serif text-2xl text-champagne-dark">
-                          {formatarValor(esgotado ? presente.valor : d.valorEntrada)}
-                        </p>
+                        <p className="text-xs text-ink-muted">Valor</p>
+                        <p className="font-serif text-2xl text-champagne-dark">{formatarValor(presente.valor)}</p>
+                        {parcelas > 1 && !esgotado && (
+                          <p className="text-xs text-ink-muted">
+                            ou até {parcelas}x de {formatarValor(presente.valor / parcelas)} no cartão
+                          </p>
+                        )}
                       </div>
                       <button
                         disabled={esgotado}

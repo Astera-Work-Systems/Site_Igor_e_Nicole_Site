@@ -31,13 +31,12 @@ import { CONFIG_PADRAO, obterConfiguracoes } from '@/lib/api';
 import * as admin from '@/lib/admin';
 import { AdminPresentesEmLote } from '@/components/AdminPresentesEmLote';
 import { formatarValor, formatarCupom, formatarDataHora } from '@/lib/utils/cupons';
-import { disponibilidade, MODOS_PRESENTE } from '@/lib/utils/presentes';
+import { disponibilidade } from '@/lib/utils/presentes';
 import { linkWhatsAppConvidado } from '@/lib/utils/whatsapp';
 import type {
   Configuracoes,
   Contribuicao,
   CupomSorteio,
-  ModoPresente,
   Presente,
   PresenteEditavel,
   StatusContribuicao,
@@ -430,8 +429,8 @@ function AbaPresentes({ presentes, onAlterado }: { presentes: Presente[]; onAlte
                     {p.titulo} {!p.ativo && <span className="text-xs text-ink-muted">(oculto)</span>}
                   </p>
                   <p className="text-xs text-ink-muted">
-                    {p.categoria} · {MODOS_PRESENTE[p.modo].nome} · {formatarValor(p.valor)} · {d.resumo}
-                    {p.modo === 'inteiro' && p.permite_pessoalmente && ' · aceita pessoalmente'}
+                    {p.categoria} · {formatarValor(p.valor)} · {d.resumo}
+                    {p.permite_pessoalmente && ' · aceita pessoalmente'}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
@@ -478,10 +477,8 @@ function PresenteForm({
       titulo: '',
       categoria: CATEGORIAS[0],
       imagem_url: '',
-      modo: 'inteiro',
       valor: 0,
       quantidade_total: 1,
-      valor_minimo: null,
       permite_pessoalmente: true,
       ativo: true,
     },
@@ -498,7 +495,6 @@ function PresenteForm({
   useEffect(() => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
-  const temContribuicoes = presente ? presente.quantidade_ocupada > 0 || presente.valor_ocupado > 0 : false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -542,10 +538,6 @@ function PresenteForm({
     }
   };
 
-  const rotuloValor = { inteiro: 'Valor de 1 unidade (R$)', cotas: 'Valor de cada cota (R$)', livre: 'Meta total (R$)' }[
-    form.modo
-  ];
-
   return (
     <form
       ref={formRef}
@@ -585,36 +577,9 @@ function PresenteForm({
         </div>
       </div>
 
-      {/* Modo */}
-      <div>
-        <label className="block text-sm font-medium text-ink-soft mb-1.5">Como o presente é dado</label>
-        <div className="grid sm:grid-cols-3 gap-2">
-          {(Object.keys(MODOS_PRESENTE) as ModoPresente[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setForm({ ...form, modo: m })}
-              className={`text-left p-3 rounded-xl border transition-all ${
-                form.modo === m
-                  ? 'border-champagne bg-champagne-50 ring-2 ring-champagne-100'
-                  : 'border-champagne-100 hover:bg-champagne-50'
-              }`}
-            >
-              <p className="text-sm font-semibold text-ink">{MODOS_PRESENTE[m].nome}</p>
-              <p className="text-xs text-ink-muted mt-0.5">{MODOS_PRESENTE[m].descricao}</p>
-            </button>
-          ))}
-        </div>
-        {temContribuicoes && form.modo !== presente?.modo && (
-          <p className="text-xs text-error mt-2">
-            Atenção: este presente já recebeu contribuições. Mudar o modo pode deixar a contagem estranha.
-          </p>
-        )}
-      </div>
-
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1.5">{rotuloValor}</label>
+          <label className="block text-sm font-medium text-ink-soft mb-1.5">Valor de 1 unidade (R$)</label>
           <input
             type="number"
             step="0.01"
@@ -624,41 +589,16 @@ function PresenteForm({
             className={inputClass}
           />
         </div>
-        {form.modo !== 'livre' ? (
-          <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1.5">
-              {form.modo === 'cotas' ? 'Número de cotas' : 'Quantas unidades vocês querem'}
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={form.quantidade_total}
-              onChange={(e) => setForm({ ...form, quantidade_total: parseInt(e.target.value) || 1 })}
-              className={inputClass}
-            />
-            {form.modo === 'cotas' && form.valor > 0 && (
-              <p className="text-xs text-ink-muted mt-1">
-                Total do presente: {formatarValor(form.valor * form.quantidade_total)}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1.5">Valor mínimo por pessoa (R$)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="5"
-              value={form.valor_minimo ?? ''}
-              onChange={(e) => setForm({ ...form, valor_minimo: parseFloat(e.target.value) || null })}
-              placeholder="5,00"
-              className={inputClass}
-            />
-            <p className="text-xs text-ink-muted mt-1">
-              Mínimo de R$ 5,00 (o Asaas não aceita pagamentos menores). Em branco = R$ 5,00.
-            </p>
-          </div>
-        )}
+        <div>
+          <label className="block text-sm font-medium text-ink-soft mb-1.5">Quantas unidades vocês querem</label>
+          <input
+            type="number"
+            min="1"
+            value={form.quantidade_total}
+            onChange={(e) => setForm({ ...form, quantidade_total: parseInt(e.target.value) || 1 })}
+            className={inputClass}
+          />
+        </div>
       </div>
 
       <div>
@@ -709,17 +649,15 @@ function PresenteForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        {form.modo === 'inteiro' && (
-          <label className="flex items-center gap-2 text-sm text-ink-soft">
-            <input
-              type="checkbox"
-              checked={form.permite_pessoalmente}
-              onChange={(e) => setForm({ ...form, permite_pessoalmente: e.target.checked })}
-              className="accent-champagne"
-            />
-            Aceita "Vou dar pessoalmente" (recomendado só para presentes menores)
-          </label>
-        )}
+        <label className="flex items-center gap-2 text-sm text-ink-soft">
+          <input
+            type="checkbox"
+            checked={form.permite_pessoalmente}
+            onChange={(e) => setForm({ ...form, permite_pessoalmente: e.target.checked })}
+            className="accent-champagne"
+          />
+          Aceita "Vou dar pessoalmente" (recomendado só para presentes menores)
+        </label>
         <label className="flex items-center gap-2 text-sm text-ink-soft">
           <input
             type="checkbox"
@@ -833,7 +771,8 @@ function AbaContribuicoes({ contribuicoes, onAlterado }: { contribuicoes: Contri
                     </p>
                     <p className="text-xs text-ink-muted mt-0.5">
                       {c.presente_titulo}
-                      {c.quantidade > 1 && ` · ${c.quantidade}×`} · {formatarDataHora(c.created_at)}
+                      {c.quantidade > 1 && ` · ${c.quantidade}×`}
+                      {c.parcelas > 1 && ` · em ${c.parcelas}x no cartão`} · {formatarDataHora(c.created_at)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -865,7 +804,7 @@ function AbaContribuicoes({ contribuicoes, onAlterado }: { contribuicoes: Contri
                       ? 'Clique de novo para confirmar — o item volta para a lista'
                       : c.tipo === 'pessoalmente'
                         ? 'Cancelar reserva (a pessoa desistiu)'
-                        : 'Cancelar e liberar a cota'}
+                        : 'Cancelar e liberar o presente'}
                   </button>
                 )}
                 {c.status === 'confirmado' && c.tipo === 'site' && (
@@ -1001,7 +940,25 @@ function AbaConfiguracoes({ config, onAlterado }: { config: Configuracoes; onAlt
             className={inputClass}
           />
           <p className="text-xs text-ink-muted mt-1">
-            Tempo que a cota fica segura enquanto o convidado paga.
+            Tempo que o presente fica reservado enquanto o convidado paga.
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-ink-soft mb-1.5">Parcelar no cartão em até</label>
+          <select
+            value={form.max_parcelas}
+            onChange={(e) => setForm({ ...form, max_parcelas: parseInt(e.target.value) })}
+            className={inputClass}
+          >
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>
+                {n === 1 ? 'Só à vista' : `${n}x`}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-ink-muted mt-1">
+            Sem juros para o convidado; a taxa do Asaas no parcelado é um pouco maior e fica com vocês. Cada
+            parcela precisa ter pelo menos R$ 5,00.
           </p>
         </div>
       </div>

@@ -18,7 +18,7 @@ const BASE_URL = (Deno.env.get('ASAAS_BASE_URL') ?? 'https://api-sandbox.asaas.c
 const SPLIT_WALLET_ID = (Deno.env.get('ASAAS_SPLIT_WALLET_ID') ?? '').trim();
 const SPLIT_PERCENTUAL = Number(Deno.env.get('ASAAS_SPLIT_PERCENTUAL') ?? '50');
 
-/** Menor valor que o Asaas aceita numa cobrança Pix ou cartão. */
+/** Menor valor que o Asaas aceita numa cobrança Pix ou cartão (no parcelado, vale para cada parcela). */
 export const VALOR_MINIMO_ASAAS = 5;
 
 export type AsaasStatus =
@@ -43,6 +43,8 @@ export interface AsaasPayment {
   value: number;
   invoiceUrl: string;
   externalReference: string | null;
+  /** Id do parcelamento (só em cobranças parceladas). */
+  installment?: string | null;
   deleted?: boolean;
 }
 
@@ -114,19 +116,28 @@ export async function obterOuCriarCliente(dados: {
   return cliente.id;
 }
 
+/**
+ * Com `parcelas` > 1 (só cartão), o Asaas cria um parcelamento e devolve a 1ª parcela.
+ * A página dela (invoiceUrl) cobra o parcelamento inteiro no cartão, e todas as parcelas
+ * mudam de status juntas — por isso basta acompanhar a 1ª.
+ */
 export function criarCobranca(dados: {
   clienteId: string;
   forma: 'pix' | 'cartao';
   valor: number;
+  parcelas: number;
   descricao: string;
   referencia: string;
 }): Promise<AsaasPayment> {
+  const parcelado = dados.forma === 'cartao' && dados.parcelas > 1;
   return asaas<AsaasPayment>('/payments', {
     method: 'POST',
     body: JSON.stringify({
       customer: dados.clienteId,
       billingType: dados.forma === 'pix' ? 'PIX' : 'CREDIT_CARD',
-      value: dados.valor,
+      ...(parcelado
+        ? { installmentCount: dados.parcelas, totalValue: dados.valor }
+        : { value: dados.valor }),
       dueDate: amanhaEmBrasilia(),
       description: dados.descricao,
       externalReference: dados.referencia,
@@ -152,7 +163,7 @@ export function statusPago(s: AsaasStatus): boolean {
   return s === 'RECEIVED' || s === 'CONFIRMED' || s === 'RECEIVED_IN_CASH';
 }
 
-/** Dinheiro voltou ou nunca vai entrar: libera a cota. */
+/** Dinheiro voltou ou nunca vai entrar: libera o presente. */
 export function statusPerdido(p: AsaasPayment): boolean {
   return (
     p.deleted === true ||

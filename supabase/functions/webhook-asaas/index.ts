@@ -26,6 +26,9 @@ Deno.serve(async (req) => {
   const pagamento = evento?.payment;
   if (!pagamento?.id) return json({ ok: true, ignorado: 'sem pagamento' });
 
+  // Parcelado: todas as parcelas mudam de status juntas; acompanhamos só a 1ª (a que fica salva).
+  if (Number(pagamento.installmentNumber) > 1) return json({ ok: true, ignorado: 'parcela seguinte' });
+
   const c = await buscarPorCobranca(String(pagamento.id), pagamento.externalReference);
 
   // Cobrança que não é deste site (ex.: criada manualmente no painel do Asaas).
