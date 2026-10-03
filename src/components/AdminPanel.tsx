@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   LayoutDashboard,
   Gift,
@@ -20,6 +20,8 @@ import {
   MessageCircle,
   Shuffle,
   AlertCircle,
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
@@ -311,7 +313,7 @@ function AbaPresentes({ presentes, onAlterado }: { presentes: Presente[]; onAlte
     }
     setConfirmarExclusao(null);
     try {
-      await admin.excluirPresente(id);
+      await admin.excluirPresente(id, presentes.find((p) => p.id === id)?.imagem_url);
       onAlterado();
     } catch {
       setErro('Não foi possível excluir. Tente desativar o presente.');
@@ -418,6 +420,10 @@ function PresenteForm({
     },
   );
   const [salvando, setSalvando] = useState(false);
+  const [enviandoImagem, setEnviandoImagem] = useState(false);
+  const [imagemQuebrada, setImagemQuebrada] = useState(false);
+  // Fotos enviadas nesta edição: as que não ficarem no presente são apagadas do Storage.
+  const enviadas = useRef<string[]>([]);
   const [erro, setErro] = useState('');
   const temContribuicoes = presente ? presente.quantidade_ocupada > 0 || presente.valor_ocupado > 0 : false;
 
@@ -431,9 +437,35 @@ function PresenteForm({
     setErro('');
     try {
       await onSave(form);
+      const sobras = enviadas.current.filter((u) => u !== form.imagem_url);
+      if (presente && presente.imagem_url !== form.imagem_url) sobras.push(presente.imagem_url);
+      sobras.forEach((u) => void admin.removerImagemPresente(u));
     } catch {
       setErro('Não foi possível salvar.');
       setSalvando(false);
+    }
+  };
+
+  const handleCancel = () => {
+    enviadas.current.forEach((u) => void admin.removerImagemPresente(u));
+    onCancel();
+  };
+
+  const handleArquivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0];
+    e.target.value = '';
+    if (!arquivo) return;
+    setEnviandoImagem(true);
+    setErro('');
+    try {
+      const url = await admin.enviarImagemPresente(arquivo);
+      enviadas.current.push(url);
+      setImagemQuebrada(false);
+      setForm((f) => ({ ...f, imagem_url: url }));
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível enviar a imagem.');
+    } finally {
+      setEnviandoImagem(false);
     }
   };
 
@@ -445,7 +477,7 @@ function PresenteForm({
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-champagne-100 p-6 mb-6 space-y-4">
       <div className="flex items-center justify-between mb-2">
         <h4 className="font-serif text-lg text-ink">{presente ? 'Editar presente' : 'Novo presente'}</h4>
-        <button type="button" onClick={onCancel} className="p-1.5 rounded-full hover:bg-champagne-50">
+        <button type="button" onClick={handleCancel} className="p-1.5 rounded-full hover:bg-champagne-50">
           <X className="w-5 h-5 text-ink-soft" />
         </button>
       </div>
@@ -549,14 +581,50 @@ function PresenteForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink-soft mb-1.5">URL da imagem</label>
-        <input
-          type="text"
-          value={form.imagem_url}
-          onChange={(e) => setForm({ ...form, imagem_url: e.target.value })}
-          placeholder="https://..."
-          className={inputClass}
-        />
+        <label className="block text-sm font-medium text-ink-soft mb-1.5">Imagem</label>
+        <div className="flex gap-4 items-start">
+          <div className="w-24 h-24 flex-shrink-0 rounded-xl border border-champagne-100 bg-champagne-50 overflow-hidden flex items-center justify-center">
+            {enviandoImagem ? (
+              <Loader2 className="w-6 h-6 text-champagne animate-spin" />
+            ) : form.imagem_url && !imagemQuebrada ? (
+              <img
+                src={form.imagem_url}
+                alt=""
+                onError={() => setImagemQuebrada(true)}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <ImageIcon className="w-6 h-6 text-ink-muted" />
+            )}
+          </div>
+          <div className="flex-1 space-y-2">
+            <label
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-champagne-200 text-sm text-ink-soft hover:bg-champagne-50 transition-colors cursor-pointer ${
+                enviandoImagem ? 'opacity-60 pointer-events-none' : ''
+              }`}
+            >
+              <Upload className="w-4 h-4" />
+              {enviandoImagem ? 'Compactando e enviando...' : 'Enviar foto do computador/celular'}
+              <input type="file" accept="image/*" onChange={handleArquivo} className="hidden" />
+            </label>
+            <p className="text-xs text-ink-muted">A foto é compactada automaticamente (fica com poucos KB).</p>
+            <input
+              type="text"
+              value={form.imagem_url}
+              onChange={(e) => {
+                setImagemQuebrada(false);
+                setForm({ ...form, imagem_url: e.target.value });
+              }}
+              placeholder="ou cole o link direto da imagem (https://...)"
+              className={inputClass}
+            />
+            {imagemQuebrada && (
+              <p className="text-xs text-error">
+                Esse link não abriu como imagem (o site pode bloquear). Salve a foto no aparelho e use "Enviar foto".
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -595,7 +663,7 @@ function PresenteForm({
         </button>
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleCancel}
           className="px-6 py-2.5 rounded-full bg-white border border-champagne-200 text-ink-soft hover:bg-champagne-50 transition-colors"
         >
           Cancelar

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
+import { compactarImagem } from '@/lib/utils/imagem';
 import type { Configuracoes, Contribuicao, CupomSorteio, Presente, PresenteEditavel } from '@/types';
 
 /**
@@ -55,9 +56,39 @@ export async function salvarPresente(p: PresenteEditavel): Promise<void> {
   if (error) throw error;
 }
 
-export async function excluirPresente(id: string): Promise<void> {
+export async function excluirPresente(id: string, imagemUrl?: string): Promise<void> {
   const { error } = await db().from('presentes').delete().eq('id', id);
   if (error) throw error;
+  if (imagemUrl) await removerImagemPresente(imagemUrl);
+}
+
+// ==================== Imagens (Supabase Storage) ====================
+
+const BUCKET_IMAGENS = 'presentes';
+
+/** Compacta a foto no navegador e envia ao Storage. Devolve a URL pública. */
+export async function enviarImagemPresente(arquivo: File): Promise<string> {
+  const { blob, extensao } = await compactarImagem(arquivo);
+  const caminho = `${crypto.randomUUID()}.${extensao}`;
+  const { error } = await db()
+    .storage.from(BUCKET_IMAGENS)
+    .upload(caminho, blob, { contentType: blob.type, cacheControl: '31536000' });
+  if (error) {
+    console.error('Upload da imagem falhou:', error.message);
+    throw new Error('Não foi possível enviar a imagem.');
+  }
+  return db().storage.from(BUCKET_IMAGENS).getPublicUrl(caminho).data.publicUrl;
+}
+
+/** Apaga do Storage uma imagem enviada pelo painel. Links externos são ignorados. */
+export async function removerImagemPresente(url: string): Promise<void> {
+  const marcador = `/storage/v1/object/public/${BUCKET_IMAGENS}/`;
+  const i = url.indexOf(marcador);
+  if (i === -1) return;
+  const caminho = decodeURIComponent(url.slice(i + marcador.length));
+  const { error } = await db().storage.from(BUCKET_IMAGENS).remove([caminho]);
+  // Não bloqueia o fluxo: no pior caso sobra um arquivo de poucos KB.
+  if (error) console.error('Não foi possível apagar a imagem antiga:', error.message);
 }
 
 export async function listarContribuicoes(): Promise<Contribuicao[]> {
