@@ -39,7 +39,21 @@ export async function listarPresentesAdmin(): Promise<Presente[]> {
 }
 
 export async function salvarPresente(p: PresenteEditavel): Promise<void> {
-  const campos = {
+  const campos = camposPresente(p);
+  const { error } = p.id
+    ? await db().from('presentes').update(campos).eq('id', p.id)
+    : await db().from('presentes').insert(campos);
+  if (error) throw error;
+}
+
+/** Cria vários presentes numa única ida ao banco (tudo ou nada). */
+export async function criarPresentes(lista: PresenteEditavel[]): Promise<void> {
+  const { error } = await db().from('presentes').insert(lista.map(camposPresente));
+  if (error) throw error;
+}
+
+function camposPresente(p: PresenteEditavel) {
+  return {
     titulo: p.titulo,
     categoria: p.categoria,
     imagem_url: p.imagem_url,
@@ -50,10 +64,6 @@ export async function salvarPresente(p: PresenteEditavel): Promise<void> {
     permite_pessoalmente: p.modo === 'inteiro' && p.permite_pessoalmente,
     ativo: p.ativo,
   };
-  const { error } = p.id
-    ? await db().from('presentes').update(campos).eq('id', p.id)
-    : await db().from('presentes').insert(campos);
-  if (error) throw error;
 }
 
 export async function excluirPresente(id: string, imagemUrl?: string): Promise<void> {

@@ -22,12 +22,14 @@ import {
   AlertCircle,
   Upload,
   Image as ImageIcon,
+  ListPlus,
 } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { CATEGORIAS, EVENT_DATA_TEXTO } from '@/data/mockData';
 import { CONFIG_PADRAO, obterConfiguracoes } from '@/lib/api';
 import * as admin from '@/lib/admin';
+import { AdminPresentesEmLote } from '@/components/AdminPresentesEmLote';
 import { formatarValor, formatarCupom, formatarDataHora } from '@/lib/utils/cupons';
 import { disponibilidade, MODOS_PRESENTE } from '@/lib/utils/presentes';
 import { linkWhatsAppConvidado } from '@/lib/utils/whatsapp';
@@ -296,6 +298,7 @@ function Painel() {
 function AbaPresentes({ presentes, onAlterado }: { presentes: Presente[]; onAlterado: () => void }) {
   const [editing, setEditing] = useState<Presente | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showLote, setShowLote] = useState(false);
   const [confirmarExclusao, setConfirmarExclusao] = useState<string | null>(null);
   const [erro, setErro] = useState('');
 
@@ -324,19 +327,43 @@ function AbaPresentes({ presentes, onAlterado }: { presentes: Presente[]; onAlte
     <div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-serif text-lg text-ink">Gerenciar Presentes</h3>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setShowForm(true);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-champagne text-white text-sm font-semibold shadow-sm hover:bg-champagne-dark transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Novo presente
-        </button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            onClick={() => {
+              setShowForm(false);
+              setEditing(null);
+              setShowLote(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-champagne-200 text-ink-soft text-sm font-semibold hover:bg-champagne-50 transition-colors"
+          >
+            <ListPlus className="w-4 h-4" />
+            Adicionar vários
+          </button>
+          <button
+            onClick={() => {
+              setShowLote(false);
+              setEditing(null);
+              setShowForm(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-champagne text-white text-sm font-semibold shadow-sm hover:bg-champagne-dark transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Novo presente
+          </button>
+        </div>
       </div>
 
       {erro && <p className="text-sm text-error mb-4">{erro}</p>}
+
+      {showLote && (
+        <AdminPresentesEmLote
+          onSalvo={() => {
+            setShowLote(false);
+            onAlterado();
+          }}
+          onCancel={() => setShowLote(false)}
+        />
+      )}
 
       {showForm && (
         <PresenteForm
@@ -373,6 +400,7 @@ function AbaPresentes({ presentes, onAlterado }: { presentes: Presente[]; onAlte
               <div className="flex gap-2 flex-shrink-0">
                 <button
                   onClick={() => {
+                    setShowLote(false);
                     setEditing(p);
                     setShowForm(true);
                   }}
