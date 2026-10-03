@@ -52,6 +52,8 @@ export async function criarPresentes(lista: PresenteEditavel[]): Promise<void> {
   if (error) throw error;
 }
 
+const VALOR_MINIMO_LIVRE = 0.01;
+
 function camposPresente(p: PresenteEditavel) {
   return {
     titulo: p.titulo,
@@ -60,7 +62,8 @@ function camposPresente(p: PresenteEditavel) {
     modo: p.modo,
     valor: p.valor,
     quantidade_total: p.modo === 'livre' ? 1 : p.quantidade_total,
-    valor_minimo: p.modo === 'livre' ? p.valor_minimo : null,
+    // Valor livre sem mínimo informado: aceita a partir de 1 centavo.
+    valor_minimo: p.modo === 'livre' ? (p.valor_minimo ?? VALOR_MINIMO_LIVRE) : null,
     permite_pessoalmente: p.modo === 'inteiro' && p.permite_pessoalmente,
     ativo: p.ativo,
   };

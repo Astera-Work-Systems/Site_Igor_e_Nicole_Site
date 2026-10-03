@@ -599,11 +599,13 @@ function PresenteForm({
             <input
               type="number"
               step="0.01"
-              min="1"
+              min="0.01"
               value={form.valor_minimo ?? ''}
               onChange={(e) => setForm({ ...form, valor_minimo: parseFloat(e.target.value) || null })}
+              placeholder="0,01"
               className={inputClass}
             />
+            <p className="text-xs text-ink-muted mt-1">Em branco = qualquer valor a partir de R$ 0,01.</p>
           </div>
         )}
       </div>
