@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import {
   LayoutDashboard,
   Gift,
@@ -323,6 +323,18 @@ function AbaPresentes({ presentes, onAlterado }: { presentes: Presente[]; onAlte
     }
   };
 
+  const formulario = (
+    <PresenteForm
+      key={editing?.id ?? 'novo'}
+      presente={editing}
+      onSave={handleSave}
+      onCancel={() => {
+        setShowForm(false);
+        setEditing(null);
+      }}
+    />
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -365,58 +377,51 @@ function AbaPresentes({ presentes, onAlterado }: { presentes: Presente[]; onAlte
         />
       )}
 
-      {showForm && (
-        <PresenteForm
-          key={editing?.id ?? 'novo'}
-          presente={editing}
-          onSave={handleSave}
-          onCancel={() => {
-            setShowForm(false);
-            setEditing(null);
-          }}
-        />
-      )}
+      {/* Novo presente abre no topo; a edição abre logo abaixo do presente clicado. */}
+      {showForm && !editing && formulario}
 
       <div className="space-y-3">
         {presentes.map((p) => {
           const d = disponibilidade(p);
           return (
-            <div
-              key={p.id}
-              className={`flex items-center gap-4 bg-white rounded-2xl border border-champagne-100 p-4 hover:shadow-sm transition-shadow ${
-                p.ativo ? '' : 'opacity-60'
-              }`}
-            >
-              <img src={p.imagem_url} alt={p.titulo} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-ink truncate">
-                  {p.titulo} {!p.ativo && <span className="text-xs text-ink-muted">(oculto)</span>}
-                </p>
-                <p className="text-xs text-ink-muted">
-                  {p.categoria} · {MODOS_PRESENTE[p.modo].nome} · {formatarValor(p.valor)} · {d.resumo}
-                  {p.modo === 'inteiro' && p.permite_pessoalmente && ' · aceita pessoalmente'}
-                </p>
+            <Fragment key={p.id}>
+              <div
+                className={`flex items-center gap-4 bg-white rounded-2xl border border-champagne-100 p-4 hover:shadow-sm transition-shadow ${
+                  p.ativo ? '' : 'opacity-60'
+                }`}
+              >
+                <img src={p.imagem_url} alt={p.titulo} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-ink truncate">
+                    {p.titulo} {!p.ativo && <span className="text-xs text-ink-muted">(oculto)</span>}
+                  </p>
+                  <p className="text-xs text-ink-muted">
+                    {p.categoria} · {MODOS_PRESENTE[p.modo].nome} · {formatarValor(p.valor)} · {d.resumo}
+                    {p.modo === 'inteiro' && p.permite_pessoalmente && ' · aceita pessoalmente'}
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      setShowLote(false);
+                      setEditing(p);
+                      setShowForm(true);
+                    }}
+                    className="p-2 rounded-lg hover:bg-champagne-50 text-ink-soft hover:text-champagne transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    onBlur={() => setConfirmarExclusao(null)}
+                    className="p-2 rounded-lg hover:bg-error-light text-ink-soft hover:text-error transition-colors text-xs font-medium"
+                  >
+                    {confirmarExclusao === p.id ? 'Confirmar?' : <Trash2 className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => {
-                    setShowLote(false);
-                    setEditing(p);
-                    setShowForm(true);
-                  }}
-                  className="p-2 rounded-lg hover:bg-champagne-50 text-ink-soft hover:text-champagne transition-colors"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  onBlur={() => setConfirmarExclusao(null)}
-                  className="p-2 rounded-lg hover:bg-error-light text-ink-soft hover:text-error transition-colors text-xs font-medium"
-                >
-                  {confirmarExclusao === p.id ? 'Confirmar?' : <Trash2 className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
+              {showForm && editing?.id === p.id && formulario}
+            </Fragment>
           );
         })}
       </div>
@@ -452,7 +457,13 @@ function PresenteForm({
   const [imagemQuebrada, setImagemQuebrada] = useState(false);
   // Fotos enviadas nesta edição: as que não ficarem no presente são apagadas do Storage.
   const enviadas = useRef<string[]>([]);
+  const formRef = useRef<HTMLFormElement>(null);
   const [erro, setErro] = useState('');
+
+  // Garante que o formulário apareça na tela, mesmo editando um presente lá embaixo da lista.
+  useEffect(() => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
   const temContribuicoes = presente ? presente.quantidade_ocupada > 0 || presente.valor_ocupado > 0 : false;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -502,7 +513,11 @@ function PresenteForm({
   ];
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-champagne-100 p-6 mb-6 space-y-4">
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="bg-white rounded-2xl border border-champagne-100 p-6 mb-6 space-y-4 scroll-mt-4"
+    >
       <div className="flex items-center justify-between mb-2">
         <h4 className="font-serif text-lg text-ink">{presente ? 'Editar presente' : 'Novo presente'}</h4>
         <button type="button" onClick={handleCancel} className="p-1.5 rounded-full hover:bg-champagne-50">
