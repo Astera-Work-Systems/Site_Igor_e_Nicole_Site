@@ -28,7 +28,22 @@ export const EVENT_LOCATION = {
   wazeUrl: 'https://waze.com/ul?q=Gurupi%20Tocantins%20Brasil',
 };
 
-export const CATEGORIAS = ['Cozinha', 'Eletrodomésticos', 'Mesa Posta', 'Cama & Banho', 'Cotas Grandes'];
+/** Ordem em que aparecem no painel e nos filtros da vitrine. Para criar outra, é só incluir aqui. */
+export const CATEGORIAS = [
+  'Cozinha',
+  'Eletrodomésticos',
+  'Eletroportáteis',
+  'Mesa Posta',
+  'Cama & Banho',
+  'Sala & Decoração',
+  'Limpeza & Lavanderia',
+  'Organização',
+  'Eletrônicos',
+  'Ferramentas & Utilidades',
+  'Lua de Mel',
+  'Cotas Grandes',
+  'Outros',
+];
 
 /** Usado só quando o Supabase ainda não está configurado (modo demonstração). */
 export const mockPresentes: Presente[] = [

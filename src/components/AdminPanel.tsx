@@ -576,7 +576,7 @@ function PresenteForm({
             onChange={(e) => setForm({ ...form, categoria: e.target.value })}
             className={inputClass}
           >
-            {CATEGORIAS.map((c) => (
+            {(CATEGORIAS.includes(form.categoria) ? CATEGORIAS : [...CATEGORIAS, form.categoria]).map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>

@@ -12,8 +12,6 @@ interface Props {
   onSelectPresente: (presente: Presente) => void;
 }
 
-const categorias = ['Todos', ...CATEGORIAS];
-
 const filtros: { label: string; value: FiltroPresente }[] = [
   { label: 'Todos os presentes', value: 'todos' },
   { label: 'Até R$ 100', value: 'ate100' },
@@ -25,6 +23,13 @@ export default function GiftVitrine({ presentes, erro, onTentarNovamente, onSele
   const [categoriaAtiva, setCategoriaAtiva] = useState('Todos');
   const [filtroAtivo, setFiltroAtivo] = useState<FiltroPresente>('todos');
   const [busca, setBusca] = useState('');
+
+  // Só mostra filtros de categorias que têm presente visível (categorias antigas fora da lista vão ao fim).
+  const categorias = useMemo(() => {
+    const usadas = new Set((presentes ?? []).filter((p) => p.ativo).map((p) => p.categoria));
+    const extras = [...usadas].filter((c) => !CATEGORIAS.includes(c)).sort();
+    return ['Todos', ...CATEGORIAS.filter((c) => usadas.has(c)), ...extras];
+  }, [presentes]);
 
   const presentesFiltrados = useMemo(() => {
     let lista = (presentes ?? []).filter((p) => p.ativo);
