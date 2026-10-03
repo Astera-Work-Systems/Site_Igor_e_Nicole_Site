@@ -30,6 +30,9 @@ Não vai ter cotas. Os presentes de valor alto podem ser parcelados no cartão. 
 - O convidado paga na página segura do Asaas, que cobra o parcelamento inteiro no cartão.
   Todas as parcelas mudam de status juntas, então o site acompanha só a 1ª. Estorno feito no
   painel do Asaas continua liberando o presente automaticamente.
+- **Quando o dinheiro cai na conta** (parcela por parcela ou antecipado) é configurado pelo noivo
+  no próprio Asaas. Isso não afeta o site: o presente é confirmado e os números da sorte são gerados
+  assim que o cartão é aprovado, sem esperar o dinheiro cair.
 
 ## Banco de dados — migração `20261003150000_sem_cotas_parcelamento.sql`
 - Presentes em **cotas** viram presente inteiro com o **valor total** (valor da cota × nº de cotas) e 1 unidade.
