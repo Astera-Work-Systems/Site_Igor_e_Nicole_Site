@@ -27,8 +27,13 @@ export async function sair() {
   await db().auth.signOut();
 }
 
+/** Falha de rede/servidor vira erro (não "false"), para não confundir com "não é admin". */
 export async function souAdmin(): Promise<boolean> {
-  const { data } = await db().rpc('is_admin');
+  const { data, error } = await db().rpc('is_admin');
+  if (error) {
+    console.error('Verificação de admin falhou:', error.code, error.message);
+    throw new Error(error.message);
+  }
   return data === true;
 }
 

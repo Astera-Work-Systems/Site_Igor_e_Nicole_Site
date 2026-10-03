@@ -60,19 +60,53 @@ export default function AdminPanel() {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  // Só verifica quando muda o USUÁRIO. O Supabase renova o login sozinho (ex.: ao voltar da
+  // galeria de fotos no celular) e cada renovação gera uma sessão nova; checar de novo a cada
+  // renovação fazia uma falha momentânea de rede derrubar o painel no meio da edição.
+  const userId = session?.user.id;
+  const [erroVerificacao, setErroVerificacao] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
   useEffect(() => {
-    if (!session) {
+    if (!userId) {
       setEhAdmin(null);
       return;
     }
-    admin.souAdmin().then(setEhAdmin).catch(() => setEhAdmin(false));
-  }, [session]);
+    let ativo = true;
+    setEhAdmin(null);
+    setErroVerificacao(false);
+    // Até 3 tentativas antes de desistir; erro de rede nunca vira "sem permissão".
+    const verificar = async () => {
+      for (let i = 0; i < 3; i++) {
+        try {
+          const ok = await admin.souAdmin();
+          if (ativo) setEhAdmin(ok);
+          return;
+        } catch {
+          await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+        }
+      }
+      if (ativo) setErroVerificacao(true);
+    };
+    void verificar();
+    return () => {
+      ativo = false;
+    };
+  }, [userId, tentativa]);
 
   let conteudo: React.ReactNode;
   if (!supabase) {
     conteudo = (
       <Aviso titulo="Painel indisponível no modo demonstração">
         Configure <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code> para usar o painel.
+      </Aviso>
+    );
+  } else if (session && ehAdmin === null && erroVerificacao) {
+    conteudo = (
+      <Aviso titulo="Não foi possível confirmar seu acesso">
+        Parece um problema de conexão.{' '}
+        <button onClick={() => setTentativa((t) => t + 1)} className="underline text-champagne-dark">
+          Tentar de novo
+        </button>
       </Aviso>
     );
   } else if (carregandoSessao || (session && ehAdmin === null)) {
