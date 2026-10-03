@@ -63,9 +63,23 @@ async function asaas<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const detalhe = body?.errors?.map((e: { description: string }) => e.description).join('; ');
-    throw new Error(`Asaas ${res.status} em ${path}: ${detalhe || JSON.stringify(body)}`);
+    throw new Error(`Asaas ${res.status} em ${semDadosPessoais(path)}: ${semDadosPessoais(detalhe || JSON.stringify(body))}`);
   }
   return body as T;
+}
+
+/**
+ * LGPD: as mensagens de erro vão para os logs das Edge Functions.
+ * Mascara CPF/CNPJ (com ou sem pontuação) e telefones, mantendo só os 2 últimos dígitos.
+ * Ex.: /customers?cpfCnpj=12345678901 → /customers?cpfCnpj=*********01
+ * IDs do Asaas (pay_123..., cus_000...) ficam intactos para dar para investigar o erro.
+ */
+function semDadosPessoais(texto: string): string {
+  return texto.replace(/(?<![\w])\d[\d.\-/ ()]{8,}\d(?![\w])/g, (trecho) => {
+    const digitos = trecho.replace(/\D/g, '');
+    if (digitos.length < 10) return trecho;
+    return '*'.repeat(digitos.length - 2) + digitos.slice(-2);
+  });
 }
 
 /** Regras de divisão aplicadas em TODA cobrança. Para ligar o 50/50, basta definir ASAAS_SPLIT_WALLET_ID. */
