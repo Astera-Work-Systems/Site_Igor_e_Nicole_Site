@@ -1,8 +1,8 @@
 import { Heart, Sparkles } from 'lucide-react';
 import { EVENT_DATA_TEXTO, EVENT_HORA_TEXTO } from '@/data/mockData';
+import fotoCasal from './assets/Igor_Nicole.jpeg';
 
-const heroImage =
-  'https://images.pexels.com/photos/853406/pexels-photo-853406.jpeg?auto=compress&cs=tinysrgb&w=1400';
+const heroImage = fotoCasal;
 
 export default function HeroSection() {
   return (
