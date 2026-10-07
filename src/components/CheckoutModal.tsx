@@ -123,7 +123,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
   // Se o convidado diminuir a quantidade, o número de parcelas acompanha o novo limite.
   const parcelasEscolhidas = forma === 'cartao' ? Math.min(parcelas, maxParcelas) : 1;
   const ganhaCupons = !pessoalmente || config.cupom_pessoalmente;
-  const qtdCupons = ganhaCupons ? calcularCupons(valorTotal, config.valor_por_cupom) : 0;
+  const qtdCupons = ganhaCupons ? calcularCupons(presente.valor, quantidade, config.valor_por_cupom) : 0;
 
   const validarDados = (): boolean => {
     const e: Record<string, string> = {};
