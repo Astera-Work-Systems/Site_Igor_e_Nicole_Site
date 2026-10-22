@@ -1,9 +1,10 @@
 /**
- * Quantidade de números da sorte para um valor: 1 a cada `valorPorCupom` (configurável no painel).
- * A geração oficial acontece no banco (confirmar_contribuicao); aqui é só a prévia na tela.
+ * Quantidade de números da sorte: cada unidade do presente vale 1 número, mais 1 a cada
+ * `valorPorCupom` (configurável no painel) do valor dela. Ex.: R$ 30 → 1, R$ 50 → 2, R$ 100 → 3.
+ * A geração oficial acontece no banco (cupons_por_regra); aqui é só a prévia na tela.
  */
-export function calcularCupons(valor: number, valorPorCupom: number = 50): number {
-  return Math.floor(valor / valorPorCupom);
+export function calcularCupons(valorUnitario: number, quantidade: number = 1, valorPorCupom: number = 50): number {
+  return quantidade * (1 + Math.floor(valorUnitario / valorPorCupom));
 }
 
 /**

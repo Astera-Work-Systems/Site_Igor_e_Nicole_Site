@@ -19,7 +19,7 @@ const destaques = [
     icon: Ticket,
     titulo: 'Sorteio de Brindes',
     descricao:
-      'Cada R$ 50 em presentes no site concede 1 cupom para o sorteio presencial no dia do evento.',
+      'Cada presente dado pelo site vale 1 número da sorte, mais 1 a cada R$ 50 do valor dele, para o sorteio presencial no dia do evento.',
     emoji: '🎟️',
   },
 ];

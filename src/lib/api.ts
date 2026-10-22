@@ -1,6 +1,7 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { mockPresentes, mockRecados } from '@/data/mockData';
+import { calcularCupons } from '@/lib/utils/cupons';
 import type {
   Configuracoes,
   FormaPagamento,
@@ -118,7 +119,7 @@ const mock = (() => {
       const valor = presente.valor * (e.quantidade ?? 1);
       const deveGerar = e.tipo === 'site' || CONFIG_PADRAO.cupom_pessoalmente;
       const cupons = Array.from(
-        { length: deveGerar ? Math.floor(valor / CONFIG_PADRAO.valor_por_cupom) : 0 },
+        { length: deveGerar ? calcularCupons(presente.valor, e.quantidade ?? 1, CONFIG_PADRAO.valor_por_cupom) : 0 },
         () => proximoCupom++,
       );
       const id = crypto.randomUUID();

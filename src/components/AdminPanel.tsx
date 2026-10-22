@@ -919,7 +919,7 @@ function AbaConfiguracoes({ config, onAlterado }: { config: Configuracoes; onAlt
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1.5">1 número da sorte a cada (R$)</label>
+          <label className="block text-sm font-medium text-ink-soft mb-1.5">+1 número da sorte a cada (R$)</label>
           <input
             type="number"
             min="1"

@@ -45,7 +45,7 @@ export default function HeroSection() {
               está aqui no site: presenteie por Pix ou cartão, ou marque que vai levar o
               presente pessoalmente.{' '}
               <span className="font-semibold text-champagne-dark">
-                A cada R$ 50,00 em presentes, você ganha 1 número da sorte
+                Cada presente vale 1 número da sorte, e a cada R$ 50,00 você ganha mais 1,
               </span>{' '}
               para concorrer ao nosso prêmio especial no dia do evento!
             </p>

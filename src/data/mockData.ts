@@ -239,7 +239,7 @@ export const faqItems = [
   {
     pergunta: 'Como funciona o sorteio dos brindes?',
     resposta:
-      `A cada R$ 50,00 em presentes pagos pelo site, você ganha 1 número da sorte automaticamente. Por exemplo: se você presenteia com R$ 150,00, recebe 3 números. O sorteio acontece presencialmente no dia do Chá de Panela, em ${EVENT_DATA_TEXTO}.`,
+      `Cada presente pago pelo site vale 1 número da sorte, e a cada R$ 50,00 do valor dele você ganha mais 1, automaticamente. Por exemplo: um presente de R$ 30,00 dá 1 número, um de R$ 50,00 dá 2 e um de R$ 150,00 dá 4. Se der 2 unidades, os números dobram. O sorteio acontece presencialmente no dia do Chá de Panela, em ${EVENT_DATA_TEXTO}.`,
   },
   {
     pergunta: 'Como faço o pagamento?',
