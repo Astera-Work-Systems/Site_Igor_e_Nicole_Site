@@ -16,12 +16,12 @@ export default function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Texto */}
           <div className="text-center lg:text-left animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-champagne-50 border border-champagne-200 mb-6">
+            {/* <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-champagne-50 border border-champagne-200 mb-6">
               <Sparkles className="w-4 h-4 text-champagne" />
               <span className="text-xs font-semibold tracking-wider uppercase text-champagne-dark">
                 {EVENT_DATA_TEXTO} · {EVENT_HORA_TEXTO}
               </span>
-            </div>
+            </div> */}
 
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-ink leading-tight mb-6 text-balance">
               Bem-vindos ao nosso{' '}
@@ -36,7 +36,7 @@ export default function HeroSection() {
               optamos por realizar um casamento civil íntimo, pois nosso maior sonho é celebrar o início dessa nova fase de forma leve, simples e inesquecivel ao lado de quem amamos.
             </p>
             <p className="text-base text-ink-muted leading-relaxed mb-4 max-w-xl mx-auto lg:mx-0">
-              Estamos preparando um dia muito especial com um lanche delicioso, momentos de
+              Estamos preparando um dia muito especial, com momentos de
               pura gratidão e um <span className="font-semibold text-ink-soft">sorteio de brindes
               e prêmios incríveis</span> para vocês!
             </p>
@@ -89,16 +89,16 @@ export default function HeroSection() {
 
               {/* Badge flutuante */}
               <div className="absolute -bottom-6 -left-4 sm:-left-6 bg-white rounded-2xl shadow-xl px-6 py-4 border border-champagne-100 animate-float">
-                <p className="font-serif text-2xl text-champagne leading-none">I &amp; N</p>
+                <p className="font-serif text-2xl text-champagne leading-none">Igor &amp; Nicole</p>
                 <p className="text-xs text-ink-muted tracking-wider uppercase mt-1">
-                  Para sempre
+                  juntos para sempre
                 </p>
               </div>
 
               {/* Decorative sparkle */}
-              <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full bg-champagne-50 border border-champagne-200 flex items-center justify-center animate-float" style={{ animationDelay: '1s' }}>
+              {/* <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full bg-champagne-50 border border-champagne-200 flex items-center justify-center animate-float" style={{ animationDelay: '1s' }}>
                 <Sparkles className="w-6 h-6 text-champagne" />
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
