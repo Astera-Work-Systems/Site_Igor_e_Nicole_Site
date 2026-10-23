@@ -29,9 +29,12 @@ export default function Header() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? 'bg-canvas/85 backdrop-blur-xl shadow-[0_1px_20px_rgba(0,0,0,0.06)]'
-          : 'bg-transparent'
+        // Menu aberto: fundo sólido, senão os itens ficam por cima do texto/foto do hero.
+        menuOpen
+          ? 'bg-canvas shadow-[0_1px_20px_rgba(0,0,0,0.06)]'
+          : scrolled
+            ? 'bg-canvas/85 backdrop-blur-xl shadow-[0_1px_20px_rgba(0,0,0,0.06)]'
+            : 'bg-transparent'
       }`}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -86,7 +89,7 @@ export default function Header() {
 
         {/* Mobile menu */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-400 ${
+          className={`md:hidden overflow-hidden transition-all duration-300 ${
             menuOpen ? 'max-h-96 pb-4' : 'max-h-0'
           }`}
         >
