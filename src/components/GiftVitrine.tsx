@@ -45,7 +45,7 @@ export default function GiftVitrine({ presentes, erro, maxParcelas, onTentarNova
     else if (filtroAtivo === 'acima300') lista = lista.filter((p) => p.valor > 300);
 
     if (busca.trim()) {
-      const termo = busca.toLowerCase();
+      const termo = busca.trim().toLowerCase();
       lista = lista.filter((p) => p.titulo.toLowerCase().includes(termo));
     }
 

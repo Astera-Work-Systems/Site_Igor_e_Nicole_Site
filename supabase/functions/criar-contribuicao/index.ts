@@ -1,6 +1,14 @@
-import { criarCobranca, obterOuCriarCliente, obterPixQrCode, VALOR_MINIMO_ASAAS } from '../_shared/asaas.ts';
+import {
+  criarCobranca,
+  excluirCobranca,
+  excluirParcelamento,
+  obterOuCriarCliente,
+  obterPixQrCode,
+  VALOR_MINIMO_ASAAS,
+} from '../_shared/asaas.ts';
 import { cancelar, confirmar, db, listarCupons, type Contribuicao } from '../_shared/db.ts';
 import { corsHeaders, erro, json } from '../_shared/http.ts';
+import { liberarReservasVencidas } from '../_shared/sincronizar.ts';
 
 interface Entrada {
   presente_id: string;
@@ -47,6 +55,8 @@ Deno.serve(async (req) => {
     if (parcelas > max) return erro(max > 1 ? `Parcele em até ${max}x.` : 'O parcelamento não está disponível.');
   }
 
+  await liberarReservasVencidas(e.presente_id);
+
   const { data: reserva, error: erroReserva } = await db.rpc('reservar_contribuicao', {
     p_presente_id: e.presente_id,
     p_tipo: e.tipo,
@@ -65,7 +75,8 @@ Deno.serve(async (req) => {
     await cancelar(c.id).catch(console.error);
     return erro('Pagamentos pelo site precisam ser de pelo menos R$ 5,00 (regra do Asaas).');
   }
-  if (Number(c.valor) / parcelas < VALOR_MINIMO_ASAAS) {
+  // Só no parcelado: "pessoalmente" não tem mínimo, e à vista já foi checado acima.
+  if (parcelas > 1 && Number(c.valor) / parcelas < VALOR_MINIMO_ASAAS) {
     await cancelar(c.id).catch(console.error);
     return erro('Cada parcela precisa ser de pelo menos R$ 5,00 (regra do Asaas). Escolha menos parcelas.');
   }
@@ -81,6 +92,7 @@ Deno.serve(async (req) => {
     return json({ id: c.id, status: 'confirmado', cupons: await listarCupons(c.id) });
   }
 
+  let cobrancaCriada: { id: string; installment?: string | null } | null = null;
   try {
     const clienteId = await obterOuCriarCliente({ nome, cpf, whatsapp });
     const cobranca = await criarCobranca({
@@ -91,6 +103,7 @@ Deno.serve(async (req) => {
       descricao: `Presente para Igor & Nicole: ${c.presente_titulo}`,
       referencia: c.id,
     });
+    cobrancaCriada = cobranca;
 
     await db
       .from('contribuicoes')
@@ -117,6 +130,11 @@ Deno.serve(async (req) => {
     console.error(err);
     // Libera o presente: sem cobrança, a reserva não faz sentido.
     await cancelar(c.id).catch(console.error);
+    // A cobrança chegou a ser criada (falhou depois, ex.: no QR Code): apaga para não ficar pagável no Asaas.
+    if (cobrancaCriada) {
+      const { id, installment } = cobrancaCriada;
+      await (installment ? excluirParcelamento(installment) : excluirCobranca(id)).catch(console.error);
+    }
     return erro('Não conseguimos gerar o pagamento agora. Tente novamente em instantes.', 502);
   }
 });

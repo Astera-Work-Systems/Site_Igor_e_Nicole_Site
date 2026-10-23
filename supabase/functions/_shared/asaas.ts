@@ -158,6 +158,11 @@ export function excluirCobranca(id: string): Promise<unknown> {
   return asaas(`/payments/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+/** Apaga o parcelamento inteiro (todas as parcelas). */
+export function excluirParcelamento(id: string): Promise<unknown> {
+  return asaas(`/installments/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
 /** Dinheiro entrou (Pix recebido ou cartão aprovado). */
 export function statusPago(s: AsaasStatus): boolean {
   return s === 'RECEIVED' || s === 'CONFIRMED' || s === 'RECEIVED_IN_CASH';

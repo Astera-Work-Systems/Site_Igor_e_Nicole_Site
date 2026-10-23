@@ -718,8 +718,12 @@ function AbaContribuicoes({ contribuicoes, onAlterado }: { contribuicoes: Contri
       return;
     }
     setConfirmarCancelamento(null);
-    await admin.cancelarContribuicao(id);
-    onAlterado();
+    try {
+      await admin.cancelarContribuicao(id);
+      onAlterado();
+    } catch {
+      window.alert('Não foi possível cancelar. Verifique a conexão e tente novamente.');
+    }
   };
 
   const filtros: { id: FiltroContribuicao; label: string }[] = [

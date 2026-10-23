@@ -21,6 +21,7 @@ export interface Contribuicao {
   whatsapp: string;
   mensagem: string | null;
   asaas_payment_id: string | null;
+  asaas_installment_id: string | null;
   asaas_invoice_url: string | null;
   expira_em: string | null;
 }

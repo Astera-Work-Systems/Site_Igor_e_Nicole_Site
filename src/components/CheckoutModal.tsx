@@ -71,9 +71,15 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
     }
   }, [presente]);
 
+  // Na tela do Pix/cartão, fechar sem querer perde o QR Code e o presente fica preso na reserva.
+  const fecharComCuidado = () => {
+    if (step === 'pagamento' && !window.confirm('Fechar o pagamento? Se você já pagou, aguarde a confirmação aqui.')) return;
+    onClose();
+  };
+
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && step !== 'pagamento') onClose();
     };
     if (presente) {
       document.body.style.overflow = 'hidden';
@@ -83,7 +89,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
       document.body.style.overflow = '';
       window.removeEventListener('keydown', onEsc);
     };
-  }, [presente, onClose]);
+  }, [presente, onClose, step]);
 
   // Polling da confirmação do pagamento (o webhook do Asaas confirma no banco).
   useEffect(() => {
@@ -171,12 +177,18 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
     }
   };
 
-  const handleCopiar = () => {
-    if (resposta?.pix) {
-      navigator.clipboard.writeText(resposta.pix.copia_e_cola);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const handleCopiar = async () => {
+    if (!resposta?.pix) return;
+    try {
+      await navigator.clipboard.writeText(resposta.pix.copia_e_cola);
+    } catch {
+      // Alguns celulares/navegadores bloqueiam a API de área de transferência.
+      const campo = document.getElementById('pix-copia-e-cola') as HTMLInputElement | null;
+      campo?.select();
+      if (!document.execCommand('copy')) return;
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const linkWhatsApp =
@@ -200,7 +212,9 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-ink/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="absolute inset-0 bg-ink/60 backdrop-blur-sm animate-fade-in"
+        onClick={() => step !== 'pagamento' && onClose()}
+      />
 
       {/* Modal */}
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
@@ -219,7 +233,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-champagne-50 transition-colors">
+          <button onClick={fecharComCuidado} className="p-2 rounded-full hover:bg-champagne-50 transition-colors">
             <X className="w-5 h-5 text-ink-soft" />
           </button>
         </div>
@@ -471,6 +485,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                     <label className="block text-sm font-medium text-ink-soft mb-1.5">Pix Copia e Cola</label>
                     <div className="flex gap-2">
                       <input
+                        id="pix-copia-e-cola"
                         type="text"
                         readOnly
                         value={resposta.pix.copia_e_cola}
@@ -513,7 +528,11 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                 <p className="text-sm text-ink-soft">
                   Aguardando confirmação do pagamento... Esta tela atualiza sozinha.
                   {config.minutos_reserva > 0 && (
-                    <> Seu presente fica reservado por {config.minutos_reserva} minutos.</>
+                    <>
+                      {' '}
+                      Seu presente fica reservado por {config.minutos_reserva} minutos. Depois disso, se outra pessoa
+                      escolher este presente, este pagamento é cancelado.
+                    </>
                   )}
                 </p>
               </div>
