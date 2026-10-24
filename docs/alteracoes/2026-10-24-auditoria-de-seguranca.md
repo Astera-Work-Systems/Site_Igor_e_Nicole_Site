@@ -254,6 +254,25 @@ máquina). A suíte que fica no repositório é `supabase/tests/edge-functions.t
 
 ---
 
+## Status: publicado e testado em produção (24/10/2026)
+
+Commit `881700a` na Vercel, as 4 funções publicadas às 13h32 e a migração aplicada.
+Testes no ar, **sem criar Pix, cobrança nem recado** (só entradas que o servidor tem que recusar):
+- **Funções (21/21):** CORS só para o site (outro domínio e domínio parecido → 403);
+  JSON inválido, preço junto, injeção e CPF inválido recusados; a função chega ao banco real
+  ("presente não está mais disponível"); webhook sem token ou com token errado → 401.
+- **Banco com a chave pública (12/12):** não lê contribuições, cupons nem admins; não muda preço;
+  não forja pagamento; não vira admin; **INSERT direto no mural barrado pela migração**
+  (`permission denied`); não acessa o limitador.
+- **Limite por IP no banco real:** o 6º pedido em 10 min recebeu 429, com `Retry-After` e CORS.
+- **Chrome no site real (11/11):** vitrine, 48 imagens, fontes, visual, checkout abrindo, painel
+  admin; XSS e envio para domínio estranho bloqueados; iframe de golpe bloqueado; sem violação de CSP.
+- A chave **secreta** do Supabase não aparece no JavaScript do site (só a publicável, que é pública).
+
+Falta só o teste humano: um Pix real de R$ 5 e um recado pelo celular.
+Sugestão opcional: `autoComplete="username"`/`"current-password"` nos campos de login do painel
+(o Chrome recomenda, para o gerenciador de senhas funcionar melhor).
+
 ## Deploy (**ordem importa**)
 
 O front novo envia os recados pela função nova, e a migração tira o INSERT direto. Siga a ordem
