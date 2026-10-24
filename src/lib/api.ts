@@ -48,9 +48,8 @@ export async function listarRecados(): Promise<Recado[]> {
 export async function criarRecado(nome: string, mensagem: string): Promise<Recado> {
   const novo = { nome_convidado: nome.trim(), mensagem: mensagem.trim(), presente_titulo: 'Mensagem de carinho' };
   if (!supabase) return { ...novo, id: `r${Date.now()}`, created_at: new Date().toISOString() };
-  const { data, error } = await supabase.from('recados').insert(novo).select().single();
-  if (error) throw error;
-  return data as Recado;
+  // Pela Edge Function (com limite por IP), não mais INSERT direto na tabela.
+  return chamarFuncao<Recado>('enviar-recado', { nome: novo.nome_convidado, mensagem: novo.mensagem });
 }
 
 export async function obterConfiguracoes(): Promise<Configuracoes> {

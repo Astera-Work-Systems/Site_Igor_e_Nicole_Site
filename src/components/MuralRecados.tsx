@@ -28,8 +28,8 @@ export default function MuralRecados() {
       setRecados([recado, ...recados]);
       setNovoRecado({ nome: '', mensagem: '' });
       setShowForm(false);
-    } catch {
-      setErro('Não foi possível enviar agora. Tente novamente.');
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível enviar agora. Tente novamente.');
     } finally {
       setEnviando(false);
     }

@@ -1,0 +1,16 @@
+# Monitoramento contínuo de dependências (alertas de vulnerabilidade + PRs de atualização).
+# Nada é atualizado sozinho: cada atualização vira um Pull Request para revisar e testar.
+# cooldown: só sugere versões publicadas há pelo menos 14 dias (pacotes envenenados
+# costumam ser descobertos e removidos do npm nos primeiros dias).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 5
+    groups:
+      dependencias-de-build:
+        dependency-type: development

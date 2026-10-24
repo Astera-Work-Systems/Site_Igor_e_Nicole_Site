@@ -7,32 +7,20 @@ import {
   VALOR_MINIMO_ASAAS,
 } from '../_shared/asaas.ts';
 import { cancelar, confirmar, db, listarCupons, type Contribuicao } from '../_shared/db.ts';
-import { corsHeaders, erro, json } from '../_shared/http.ts';
+import { erro, json, limitar, mensagemDoBanco, servirParaSite } from '../_shared/http.ts';
 import { liberarReservasVencidas } from '../_shared/sincronizar.ts';
+import { EntradaContribuicao, lerEntrada } from '../_shared/validacao.ts';
 
-interface Entrada {
-  presente_id: string;
-  tipo: 'site' | 'pessoalmente';
-  forma_pagamento?: 'pix' | 'cartao';
-  quantidade?: number;
-  /** Só no cartão; 1 = à vista. */
-  parcelas?: number;
-  nome: string;
-  whatsapp: string;
-  cpf?: string;
-  mensagem?: string;
-}
+/** Por IP: cada reserva trava o presente por 30 min, então um robô não pode reservar a lista inteira. */
+const LIMITE_POR_IP = 15;
+const JANELA_SEGUNDOS = 10 * 60;
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return erro('Método não permitido.', 405);
+servirParaSite(async (req) => {
+  const bloqueio = await limitar(req, 'criar-contribuicao', LIMITE_POR_IP, JANELA_SEGUNDOS);
+  if (bloqueio) return bloqueio;
 
-  let e: Entrada;
-  try {
-    e = await req.json();
-  } catch {
-    return erro('Requisição inválida.');
-  }
+  const e = await lerEntrada(req, EntradaContribuicao);
+  if (!e) return erro('Requisição inválida.');
 
   const nome = (e.nome ?? '').trim();
   const whatsapp = (e.whatsapp ?? '').replace(/\D/g, '');
@@ -67,7 +55,10 @@ Deno.serve(async (req) => {
     p_whatsapp: whatsapp,
     p_mensagem: mensagem,
   });
-  if (erroReserva) return erro(erroReserva.message);
+  if (erroReserva) {
+    console.error(erroReserva);
+    return erro(mensagemDoBanco(erroReserva, 'Não foi possível reservar este presente agora. Tente novamente.'));
+  }
   const c = reserva as Contribuicao;
 
   // O Asaas recusa cobranças abaixo de R$ 5,00; avisa com clareza em vez do erro genérico.
