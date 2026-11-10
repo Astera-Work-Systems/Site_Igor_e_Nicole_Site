@@ -1,17 +1,17 @@
 import type { Presente, Recado } from '@/types';
 
-export const EVENT_DATE = new Date('2027-04-10T18:00:00-03:00');
+export const EVENT_DATE = new Date('2027-04-11T17:00:00-03:00');
 
 // Textos derivados de EVENT_DATE: para mudar a data do evento, altere só a linha acima.
 const formatarEvento = (opcoes: Intl.DateTimeFormatOptions) =>
   EVENT_DATE.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', ...opcoes });
 const mesEvento = formatarEvento({ month: 'long' });
 
-/** Ex.: "10 de Abril de 2027" */
+/** Ex.: "11 de Abril de 2027" */
 export const EVENT_DATA_TEXTO = `${formatarEvento({ day: 'numeric' })} de ${
   mesEvento.charAt(0).toUpperCase() + mesEvento.slice(1)
 } de ${formatarEvento({ year: 'numeric' })}`;
-/** Ex.: "18h00" */
+/** Ex.: "17h00" */
 export const EVENT_HORA_TEXTO = formatarEvento({ hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', 'h');
 
 export const NOIVOS_WHATSAPP = '5563984609954';
