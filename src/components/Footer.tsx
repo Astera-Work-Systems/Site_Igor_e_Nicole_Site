@@ -1,5 +1,5 @@
 import { Heart, Mail, Phone, Sparkles } from 'lucide-react';
-import { ASTERA_INFO, EVENT_DATA_TEXTO } from '@/data/mockData';
+import { ASTERA_INFO } from '@/data/mockData';
 
 export default function Footer() {
   return (
@@ -18,7 +18,7 @@ export default function Footer() {
             Igor <span className="text-champagne">&amp;</span> Nicole
           </h2>
           <p className="text-white/60 text-sm tracking-wider uppercase">
-            {EVENT_DATA_TEXTO} · Gurupi, Tocantins
+            Gurupi, Tocantins
           </p>
         </div>
 
@@ -58,7 +58,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="pt-6 border-t border-white/10 text-center">
           <p className="text-xs text-white/40">
-            © 2026 Igor &amp; Nicole · Chá de Panela · Todos os direitos reservados
+            © 2026 Igor &amp; Nicole · Lista de Presentes · Todos os direitos reservados
           </p>
         </div>
       </div>

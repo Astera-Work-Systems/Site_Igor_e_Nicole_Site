@@ -7,7 +7,6 @@ import {
   Check,
   Loader2,
   QrCode,
-  Ticket,
   MessageCircle,
   PartyPopper,
   CreditCard,
@@ -18,10 +17,9 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import type { CheckoutStep, Configuracoes, Presente } from '@/types';
-import { formatarValor, calcularCupons, formatarCupom } from '@/lib/utils/cupons';
+import { formatarValor } from '@/lib/utils/cupons';
 import { disponibilidade, parcelasPermitidas, VALOR_MINIMO_PAGAMENTO } from '@/lib/utils/presentes';
 import { gerarLinkWhatsApp } from '@/lib/utils/whatsapp';
-import { EVENT_DATA_TEXTO } from '@/data/mockData';
 import { consultarContribuicao, criarContribuicao, type RespostaContribuicao } from '@/lib/api';
 
 interface Props {
@@ -55,7 +53,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
   const [enviando, setEnviando] = useState(false);
   const [resposta, setResposta] = useState<RespostaContribuicao | null>(null);
   const [copied, setCopied] = useState(false);
-  const [cupons, setCupons] = useState<string[]>([]);
 
   useEffect(() => {
     if (presente) {
@@ -67,7 +64,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
       setErros({});
       setErroGeral('');
       setResposta(null);
-      setCupons([]);
     }
   }, [presente]);
 
@@ -100,7 +96,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
         const r = await consultarContribuicao(resposta.id);
         if (!ativo) return;
         if (r.status === 'confirmado') {
-          setCupons(r.cupons.map(formatarCupom));
           setStep('sucesso');
           onContribuicaoRegistrada();
         } else if (r.status === 'cancelado') {
@@ -128,8 +123,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
   const maxParcelas = parcelasPermitidas(valorTotal, config.max_parcelas);
   // Se o convidado diminuir a quantidade, o número de parcelas acompanha o novo limite.
   const parcelasEscolhidas = forma === 'cartao' ? Math.min(parcelas, maxParcelas) : 1;
-  const ganhaCupons = !pessoalmente || config.cupom_pessoalmente;
-  const qtdCupons = ganhaCupons ? calcularCupons(presente.valor, quantidade, config.valor_por_cupom) : 0;
 
   const validarDados = (): boolean => {
     const e: Record<string, string> = {};
@@ -165,7 +158,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
       setResposta(r);
       onContribuicaoRegistrada();
       if (r.status === 'confirmado') {
-        setCupons((r.cupons ?? []).map(formatarCupom));
         setStep('sucesso');
       } else {
         setStep('pagamento');
@@ -193,7 +185,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
 
   const linkWhatsApp =
     step === 'sucesso'
-      ? gerarLinkWhatsApp(presente.titulo, dados.mensagem || 'Muita alegria e bênções!', cupons, pessoalmente)
+      ? gerarLinkWhatsApp(presente.titulo, dados.mensagem || 'Muita alegria e bênções!', pessoalmente)
       : '';
 
   const inputClass = (erro?: string) =>
@@ -249,15 +241,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                 {valorTotal > 0 ? formatarValor(valorTotal) : '—'}
               </p>
             </div>
-            {qtdCupons > 0 && (
-              <div className="text-right">
-                <p className="text-xs text-ink-muted">Você ganha</p>
-                <p className="flex items-center gap-1 text-sm font-semibold text-champagne-dark">
-                  <Ticket className="w-4 h-4" />
-                  {qtdCupons} {qtdCupons === 1 ? 'cupom' : 'cupons'}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Step 1: Escolha + dados */}
@@ -335,9 +318,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-ink-muted mt-1">
-                    Os números da sorte valem pelo valor total do presente, mesmo parcelado.
-                  </p>
                 </div>
               )}
 
@@ -350,11 +330,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                     Ao confirmar, <strong>este presente sai da lista</strong> para ninguém comprar repetido.
                     É só levar no dia. Se mudar de ideia, avise os noivos para liberarem o item.
                   </p>
-                  {!config.cupom_pessoalmente && (
-                    <p className="text-xs text-ink-muted">
-                      Os números da sorte são gerados apenas para presentes pagos pelo site.
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -412,19 +387,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                   className="w-full px-4 py-3 rounded-xl border border-champagne-100 bg-canvas text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:border-champagne focus:ring-champagne-100 transition-all resize-none"
                 />
               </div>
-
-              {qtdCupons > 0 && (
-                <div className="bg-champagne-50 rounded-xl p-4 flex items-start gap-3">
-                  <Ticket className="w-5 h-5 text-champagne mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-ink-soft">
-                    Com este presente de {formatarValor(valorTotal)}, você receberá{' '}
-                    <strong className="text-champagne-dark">
-                      {qtdCupons} {qtdCupons === 1 ? 'número da sorte' : 'números da sorte'}
-                    </strong>{' '}
-                    para o sorteio presencial no dia do Chá de Panela.
-                  </p>
-                </div>
-              )}
 
               {erroGeral && (
                 <div className="flex items-start gap-2 rounded-xl bg-error-light p-3 text-sm text-error">
@@ -560,31 +522,6 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                     : `${dados.nome}, agradecemos de coração! Seu presente para Igor & Nicole foi confirmado.`}
                 </p>
               </div>
-
-              {cupons.length > 0 && (
-                <div className="bg-gradient-to-br from-champagne-50 to-champagne-100 rounded-2xl p-6 border border-champagne-200">
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <Ticket className="w-5 h-5 text-champagne-dark" />
-                    <p className="text-sm font-semibold text-champagne-dark tracking-wider uppercase">
-                      Seus números da sorte
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {cupons.map((cupom) => (
-                      <span
-                        key={cupom}
-                        className="px-4 py-2 rounded-xl bg-white border-2 border-champagne-200 font-serif text-lg text-champagne-dark shadow-sm animate-scale-in"
-                      >
-                        {cupom}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-xs text-ink-muted mt-4">
-                    Guarde seus números! O sorteio acontece presencialmente no dia{' '}
-                    <strong>{EVENT_DATA_TEXTO}</strong>.
-                  </p>
-                </div>
-              )}
 
               <a
                 href={linkWhatsApp}

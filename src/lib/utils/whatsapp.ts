@@ -6,16 +6,12 @@ import { NOIVOS_WHATSAPP } from '@/data/mockData';
 export function gerarLinkWhatsApp(
   nomeItem: string,
   mensagem: string,
-  cupons: string[],
   pessoalmente = false,
 ): string {
   const acao = pessoalmente
     ? `Reservei no site o presente *${nomeItem}* e vou entregar pessoalmente!`
     : `Acabei de abençoar vocês no site com o presente *${nomeItem}*!`;
-  const numeros = cupons.length
-    ? ` Meus números da sorte para o Chá de Panela são *${cupons.join(', ')}*.`
-    : '';
-  const texto = `Oi, Igor! ${acao} Deixei a seguinte mensagem: '${mensagem}'.${numeros} Ansioso pelo nosso encontro! ❤️`;
+  const texto = `Oi, Igor! ${acao} Deixei a seguinte mensagem: '${mensagem}'. ❤️`;
 
   return `https://wa.me/${NOIVOS_WHATSAPP}?text=${encodeURIComponent(texto)}`;
 }

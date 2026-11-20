@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { compactarImagem } from '@/lib/utils/imagem';
-import type { Configuracoes, Contribuicao, CupomSorteio, Presente, PresenteEditavel } from '@/types';
+import type { Configuracoes, Contribuicao, Presente, PresenteEditavel } from '@/types';
 
 /**
  * Operações do painel dos noivos. Todas passam pelas regras RLS do banco:
@@ -116,12 +116,6 @@ export async function listarContribuicoes(): Promise<Contribuicao[]> {
 export async function cancelarContribuicao(id: string): Promise<void> {
   const { error } = await db().rpc('cancelar_contribuicao', { p_id: id });
   if (error) throw error;
-}
-
-export async function listarCupons(): Promise<CupomSorteio[]> {
-  const { data, error } = await db().from('cupons_sorteio').select('*').order('numero_cupom');
-  if (error) throw error;
-  return data as CupomSorteio[];
 }
 
 export async function salvarConfiguracoes(c: Configuracoes): Promise<void> {

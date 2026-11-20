@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
-import Countdown from '@/components/Countdown';
-import EventHighlights from '@/components/EventHighlights';
 import GiftVitrine from '@/components/GiftVitrine';
 import CheckoutModal from '@/components/CheckoutModal';
 import MuralRecados from '@/components/MuralRecados';
-import LocationSection from '@/components/LocationSection';
 import FAQ from '@/components/FAQ';
 import Footer from '@/components/Footer';
 import AdminPanel from '@/components/AdminPanel';
@@ -51,8 +48,6 @@ function App() {
       <Header />
       <main>
         <HeroSection />
-        <Countdown />
-        <EventHighlights />
         <GiftVitrine
           presentes={presentes}
           erro={erroPresentes}
@@ -61,7 +56,6 @@ function App() {
           onSelectPresente={setPresenteSelecionado}
         />
         <MuralRecados />
-        <LocationSection />
         <FAQ />
       </main>
       <Footer />

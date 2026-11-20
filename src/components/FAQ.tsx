@@ -16,7 +16,7 @@ export default function FAQ() {
             Perguntas Frequentes
           </h2>
           <p className="text-ink-muted">
-            Tudo o que você precisa saber sobre o nosso Chá de Panela
+            Tudo o que você precisa saber sobre a nossa lista de presentes
           </p>
         </div>
 

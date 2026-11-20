@@ -234,12 +234,7 @@ export const faqItems = [
   {
     pergunta: 'Posso comprar o presente e levar pessoalmente?',
     resposta:
-      'Pode sim, nos presentes marcados com "Pode dar pessoalmente". Mas é muito importante: clique em "Presentear" e escolha "Vou dar pessoalmente". Assim o presente sai da lista e ninguém compra o mesmo item. Se você não marcar no site, não temos como saber e o presente pode acabar repetido.',
-  },
-  {
-    pergunta: 'Como funciona o sorteio dos brindes?',
-    resposta:
-      `Cada presente pago pelo site vale 1 número da sorte, e a cada R$ 50,00 do valor dele você ganha mais 1, automaticamente. Por exemplo: um presente de R$ 30,00 dá 1 número, um de R$ 50,00 dá 2 e um de R$ 150,00 dá 4. Se der 2 unidades, os números dobram. O sorteio acontece presencialmente no dia do Chá de Panela, em ${EVENT_DATA_TEXTO}.`,
+      'Pode sim! A lista é só uma sugestão: você pode presentear pelo site ou comprar onde preferir e entregar pessoalmente. Se for um presente da lista marcado com "Pode dar pessoalmente", clique em "Presentear" e escolha "Vou dar pessoalmente". Assim o presente sai da lista e ninguém compra o mesmo item.',
   },
   {
     pergunta: 'Como faço o pagamento?',
@@ -249,16 +244,11 @@ export const faqItems = [
   {
     pergunta: 'Posso escolher mais de um presente?',
     resposta:
-      'Claro! Você pode presentear com quantos itens quiser. Cada presente gera seus próprios números da sorte, e todos se acumulam para o sorteio presencial.',
+      'Claro! Você pode presentear com quantos itens quiser.',
   },
   {
     pergunta: 'O que acontece depois que eu pago?',
     resposta:
-      'Assim que o pagamento é confirmado, seus números da sorte aparecem na tela. Você também pode enviar uma mensagem de bênção direto para o WhatsApp do noivo com um clique, usando uma mensagem já formatada.',
-  },
-  {
-    pergunta: 'Preciso levar algo no dia do evento?',
-    resposta:
-      'Se você presenteou pelo site, não! Venha com seu coração aberto para celebrar conosco. Se você marcou "Vou dar pessoalmente", é só levar o presente no dia. O sorteio dos brindes acontece presencialmente.',
+      'Assim que o pagamento é confirmado, a confirmação aparece na tela. Você também pode enviar uma mensagem de bênção direto para o WhatsApp do noivo com um clique, usando uma mensagem já formatada.',
   },
 ];

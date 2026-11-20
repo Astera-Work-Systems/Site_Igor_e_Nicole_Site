@@ -65,8 +65,7 @@ export default function GiftVitrine({ presentes, erro, maxParcelas, onTentarNova
           </h2>
           <p className="text-ink-muted max-w-2xl mx-auto">
             Presenteie por Pix ou cartão — os presentes de valor mais alto podem ser parcelados no cartão.
-            Ao presentear pelo site, você recebe automaticamente números da sorte para o sorteio
-            presencial.
+            A lista é só uma sugestão: se preferir, compre onde quiser e entregue pessoalmente.
           </p>
         </div>
 

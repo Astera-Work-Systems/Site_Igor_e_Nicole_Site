@@ -2,7 +2,6 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import {
   LayoutDashboard,
   Gift,
-  Ticket,
   TrendingUp,
   DollarSign,
   Users,
@@ -18,7 +17,6 @@ import {
   Loader2,
   HandHeart,
   MessageCircle,
-  Shuffle,
   AlertCircle,
   Upload,
   Image as ImageIcon,
@@ -26,23 +24,22 @@ import {
 } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import { CATEGORIAS, EVENT_DATA_TEXTO } from '@/data/mockData';
+import { CATEGORIAS } from '@/data/mockData';
 import { CONFIG_PADRAO, obterConfiguracoes } from '@/lib/api';
 import * as admin from '@/lib/admin';
 import { AdminPresentesEmLote } from '@/components/AdminPresentesEmLote';
-import { formatarValor, formatarCupom, formatarDataHora } from '@/lib/utils/cupons';
+import { formatarValor, formatarDataHora } from '@/lib/utils/cupons';
 import { disponibilidade } from '@/lib/utils/presentes';
 import { linkWhatsAppConvidado } from '@/lib/utils/whatsapp';
 import type {
   Configuracoes,
   Contribuicao,
-  CupomSorteio,
   Presente,
   PresenteEditavel,
   StatusContribuicao,
 } from '@/types';
 
-type AdminTab = 'dashboard' | 'presentes' | 'contribuicoes' | 'sorteio' | 'configuracoes';
+type AdminTab = 'dashboard' | 'presentes' | 'contribuicoes' | 'configuracoes';
 
 export default function AdminPanel() {
   const [session, setSession] = useState<Session | null>(null);
@@ -137,7 +134,7 @@ export default function AdminPanel() {
           <div>
             <h1 className="font-serif text-3xl text-ink">Painel Administrativo</h1>
             <p className="text-ink-muted text-sm mt-1">
-              Gerencie presentes, acompanhe arrecadação e visualize cupons do sorteio
+              Gerencie presentes e acompanhe a arrecadação
             </p>
           </div>
           <div className="flex gap-2">
@@ -219,21 +216,18 @@ function Painel() {
   const [tab, setTab] = useState<AdminTab>('dashboard');
   const [presentes, setPresentes] = useState<Presente[]>([]);
   const [contribuicoes, setContribuicoes] = useState<Contribuicao[]>([]);
-  const [cupons, setCupons] = useState<CupomSorteio[]>([]);
   const [config, setConfig] = useState<Configuracoes>(CONFIG_PADRAO);
   const [erro, setErro] = useState('');
 
   const recarregar = useCallback(async () => {
     try {
-      const [p, c, cp, cfg] = await Promise.all([
+      const [p, c, cfg] = await Promise.all([
         admin.listarPresentesAdmin(),
         admin.listarContribuicoes(),
-        admin.listarCupons(),
         obterConfiguracoes(),
       ]);
       setPresentes(p);
       setContribuicoes(c);
-      setCupons(cp);
       setConfig(cfg);
       setErro('');
     } catch {
@@ -258,7 +252,6 @@ function Painel() {
           { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
           { id: 'presentes' as const, label: 'Presentes', icon: Gift },
           { id: 'contribuicoes' as const, label: 'Contribuições', icon: Receipt },
-          { id: 'sorteio' as const, label: 'Sorteio', icon: Ticket },
           { id: 'configuracoes' as const, label: 'Configurações', icon: Settings },
         ].map((t) => {
           const Icon = t.icon;
@@ -285,9 +278,8 @@ function Painel() {
 
       {tab === 'dashboard' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <StatCard icon={DollarSign} label="Total Arrecadado" value={formatarValor(totalArrecadado)} color="champagne" />
-            <StatCard icon={Ticket} label="Cupons Gerados" value={String(cupons.length)} color="success" />
             <StatCard icon={TrendingUp} label="Pagamentos Confirmados" value={String(pagas.length)} color="champagne" />
             <StatCard icon={Users} label="Vão dar pessoalmente" value={String(totalPessoalmente)} color="ink" />
           </div>
@@ -320,7 +312,6 @@ function Painel() {
 
       {tab === 'presentes' && <AbaPresentes presentes={presentes} onAlterado={recarregar} />}
       {tab === 'contribuicoes' && <AbaContribuicoes contribuicoes={contribuicoes} onAlterado={recarregar} />}
-      {tab === 'sorteio' && <AbaSorteio cupons={cupons} />}
       {tab === 'configuracoes' && <AbaConfiguracoes config={config} onAlterado={recarregar} />}
     </>
   );
@@ -825,62 +816,6 @@ function AbaContribuicoes({ contribuicoes, onAlterado }: { contribuicoes: Contri
   );
 }
 
-// ==================== SORTEIO ====================
-
-function AbaSorteio({ cupons }: { cupons: CupomSorteio[] }) {
-  const [sorteado, setSorteado] = useState<CupomSorteio | null>(null);
-
-  const sortear = () => {
-    if (cupons.length === 0) return;
-    const aleatorio = new Uint32Array(1);
-    crypto.getRandomValues(aleatorio);
-    setSorteado(cupons[aleatorio[0] % cupons.length]);
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-2xl border border-champagne-100 p-8 text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-champagne-50 border border-champagne-100 mb-4">
-          <Ticket className="w-8 h-8 text-champagne" strokeWidth={1.5} />
-        </div>
-        <h3 className="font-serif text-xl text-ink mb-2">Sorteio do Chá de Panela</h3>
-        <p className="text-ink-muted text-sm max-w-md mx-auto mb-6">
-          Total de <strong className="text-champagne-dark">{cupons.length} cupons</strong> gerados
-          até agora. O sorteio acontece presencialmente no dia {EVENT_DATA_TEXTO}.
-        </p>
-        <button
-          onClick={sortear}
-          disabled={cupons.length === 0}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-champagne text-white font-semibold shadow-sm hover:bg-champagne-dark transition-colors disabled:opacity-50"
-        >
-          <Shuffle className="w-4 h-4" /> Sortear um número
-        </button>
-        {sorteado && (
-          <div className="mt-6 animate-scale-in">
-            <p className="font-serif text-4xl text-champagne-dark">{formatarCupom(sorteado.numero_cupom)}</p>
-            <p className="text-ink mt-1">{sorteado.nome_convidado}</p>
-            <p className="text-xs text-ink-muted">{sorteado.whatsapp}</p>
-          </div>
-        )}
-      </div>
-
-      {cupons.length > 0 && (
-        <div className="bg-white rounded-2xl border border-champagne-100 p-6">
-          <h3 className="font-serif text-lg text-ink mb-4">Todos os números</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {cupons.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 rounded-xl bg-champagne-50 border border-champagne-100 px-3 py-2">
-                <span className="font-serif text-champagne-dark">{formatarCupom(c.numero_cupom)}</span>
-                <span className="text-xs text-ink-soft truncate">{c.nome_convidado}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ==================== CONFIGURAÇÕES ====================
 
 function AbaConfiguracoes({ config, onAlterado }: { config: Configuracoes; onAlterado: () => void }) {
@@ -905,34 +840,7 @@ function AbaConfiguracoes({ config, onAlterado }: { config: Configuracoes; onAlt
     <form onSubmit={salvar} className="bg-white rounded-2xl border border-champagne-100 p-6 space-y-5 max-w-2xl">
       <h3 className="font-serif text-lg text-ink">Regras do site</h3>
 
-      <label className="flex items-start gap-3 text-sm text-ink-soft">
-        <input
-          type="checkbox"
-          checked={form.cupom_pessoalmente}
-          onChange={(e) => setForm({ ...form, cupom_pessoalmente: e.target.checked })}
-          className="accent-champagne mt-1"
-        />
-        <span>
-          <strong className="text-ink">Quem dá pessoalmente também ganha número da sorte</strong>
-          <br />
-          <span className="text-xs text-ink-muted">
-            Desligado: só presentes pagos pelo site geram números. Vale para as novas reservas.
-          </span>
-        </span>
-      </label>
-
       <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1.5">+1 número da sorte a cada (R$)</label>
-          <input
-            type="number"
-            min="1"
-            step="0.01"
-            value={form.valor_por_cupom}
-            onChange={(e) => setForm({ ...form, valor_por_cupom: parseFloat(e.target.value) || 50 })}
-            className={inputClass}
-          />
-        </div>
         <div>
           <label className="block text-sm font-medium text-ink-soft mb-1.5">Reserva durante o pagamento (minutos)</label>
           <input

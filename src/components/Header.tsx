@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react';
 import { Menu, X, Heart } from 'lucide-react';
 
 const navLinks = [
-  { label: 'O Evento', href: '#evento' },
+  { label: 'Início', href: '#evento' },
   { label: 'Presentes', href: '#presentes' },
-  { label: 'Sorteio', href: '#sorteio' },
   { label: 'Recados', href: '#recados' },
-  { label: 'Local', href: '#local' },
   { label: 'FAQ', href: '#faq' },
 ];
 
@@ -52,7 +50,7 @@ export default function Header() {
                 Igor <span className="text-champagne">&amp;</span> Nicole
               </span>
               <p className="text-[10px] tracking-[0.2em] uppercase text-ink-muted mt-0.5">
-                Chá de Panela
+                Lista de Presentes
               </p>
             </div>
           </button>
