@@ -25,7 +25,7 @@ export default function HeroSection() {
 
             <p className="text-lg text-ink-soft leading-relaxed mb-4 max-w-xl mx-auto lg:mx-0">
               <span className="font-medium text-ink">Queridos amigos e familiares,</span>{' '}
-              optamos por realizar um casamento civil íntimo, pois nosso maior sonho é celebrar o início dessa nova fase de forma leve, simples e inesquecível ao lado de quem amamos.
+              optamos por realizar um casamento civil, para nos dedicarmos à construção do nosso novo lar e ao início dessa nova fase.
             </p>
             <p className="text-base text-ink-muted leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
               Para facilitar a montagem do nosso lar e evitar itens duplicados, deixamos aqui
