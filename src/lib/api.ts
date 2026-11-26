@@ -1,6 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import { mockPresentes, mockRecados } from '@/data/mockData';
+import { mockPresentes } from '@/data/mockData';
 import { calcularCupons } from '@/lib/utils/cupons';
 import type {
   Configuracoes,
@@ -35,7 +35,7 @@ export async function listarPresentes(): Promise<Presente[]> {
 }
 
 export async function listarRecados(): Promise<Recado[]> {
-  if (!supabase) return mockRecados;
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from('recados')
     .select('*')

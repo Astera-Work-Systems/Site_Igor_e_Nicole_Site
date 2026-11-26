@@ -73,7 +73,7 @@ export default function GiftVitrine({ presentes, erro, maxParcelas, onTentarNova
         <div className="max-w-3xl mx-auto mb-10 flex items-start gap-3 rounded-2xl border border-champagne-200 bg-champagne-50 p-4 sm:p-5">
           <HandHeart className="w-6 h-6 text-champagne-dark flex-shrink-0 mt-0.5" />
           <p className="text-sm text-ink-soft leading-relaxed">
-            <strong className="text-ink">Vai comprar o presente e levar pessoalmente?</strong> Que
+            <strong className="text-ink">Vai comprar o presente e entregar pessoalmente?</strong> Que
             alegria! Só pedimos uma coisa: clique em <strong>"Presentear"</strong> e escolha{' '}
             <strong>"Vou dar pessoalmente"</strong>. Assim o item sai da lista e ninguém compra
             repetido.{' '}

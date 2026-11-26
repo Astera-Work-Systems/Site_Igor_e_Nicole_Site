@@ -328,7 +328,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                   </p>
                   <p>
                     Ao confirmar, <strong>este presente sai da lista</strong> para ninguém comprar repetido.
-                    É só levar no dia. Se mudar de ideia, avise os noivos para liberarem o item.
+                    É só entregar no dia. Se mudar de ideia, avise os noivos para liberarem o item.
                   </p>
                 </div>
               )}
@@ -518,7 +518,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                 </h3>
                 <p className="text-ink-muted text-sm">
                   {pessoalmente
-                    ? `${dados.nome}, obrigado por avisar! O presente saiu da lista — é só levar no dia.`
+                    ? `${dados.nome}, obrigado por avisar! O presente saiu da lista — é só entregar no dia.`
                     : `${dados.nome}, agradecemos de coração! Seu presente para Igor & Nicole foi confirmado.`}
                 </p>
               </div>

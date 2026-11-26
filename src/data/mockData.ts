@@ -1,4 +1,4 @@
-import type { Presente, Recado } from '@/types';
+import type { Presente } from '@/types';
 
 export const EVENT_DATE = new Date('2027-04-11T17:00:00-03:00');
 
@@ -180,51 +180,6 @@ export const mockPresentes: Presente[] = [
   },
 ];
 
-export const mockRecados: Recado[] = [
-  {
-    id: 'r1',
-    nome_convidado: 'Mariana Costa',
-    mensagem: 'Que a felicidade de vocês seja eterna! Mal posso esperar pelo grande dia!',
-    presente_titulo: 'Cafeteira Espresso Automática',
-    created_at: '2026-09-10T14:30:00-03:00',
-  },
-  {
-    id: 'r2',
-    nome_convidado: 'Pedro Henrique',
-    mensagem: 'Vocês merecem todo amor do mundo. Abençoo essa nova fase com muito carinho!',
-    presente_titulo: 'Jogo de Panelas Antiaderente 7 Peças',
-    created_at: '2026-09-08T10:15:00-03:00',
-  },
-  {
-    id: 'r3',
-    nome_convidado: 'Juliana Mendes',
-    mensagem: 'Que o lar de vocês seja sempre cheio de amor, risadas e café fresquinho!',
-    presente_titulo: 'Jogo de Pratos Cerâmica 24 Peças',
-    created_at: '2026-09-05T16:45:00-03:00',
-  },
-  {
-    id: 'r4',
-    nome_convidado: 'Carlos Eduardo',
-    mensagem: 'Felicidades ao casal! Que venham muitos anos de pura alegria juntos.',
-    presente_titulo: 'Geladeira Frost Free',
-    created_at: '2026-09-01T09:20:00-03:00',
-  },
-  {
-    id: 'r5',
-    nome_convidado: 'Fernanda Lima',
-    mensagem: 'Vocês são um casal lindo! Que a vida abençoe cada dia de vocês. Amo muito!',
-    presente_titulo: 'Jogo de Taças de Cristal 6 Peças',
-    created_at: '2026-08-28T19:00:00-03:00',
-  },
-  {
-    id: 'r6',
-    nome_convidado: 'Ricardo Alves',
-    mensagem: 'Toda felicidade do mundo para vocês! Foi uma honra acompanhar essa jornada.',
-    presente_titulo: 'Liquidificador Industrial 3L',
-    created_at: '2026-08-25T11:30:00-03:00',
-  },
-];
-
 export const faqItems = [
   {
     pergunta: 'Como funciona a lista de presentes?',
@@ -232,7 +187,7 @@ export const faqItems = [
       'Você escolhe um item na vitrine e presenteia pelo site com Pix ou cartão. Os presentes de valor mais alto (como a geladeira) podem ser parcelados no cartão. Tudo que já foi dado sai da lista automaticamente, para não ter presente repetido.',
   },
   {
-    pergunta: 'Posso comprar o presente e levar pessoalmente?',
+    pergunta: 'Posso comprar o presente e entregar pessoalmente?',
     resposta:
       'Pode sim! A lista é só uma sugestão: você pode presentear pelo site ou comprar onde preferir e entregar pessoalmente. Se for um presente da lista marcado com "Pode dar pessoalmente", clique em "Presentear" e escolha "Vou dar pessoalmente". Assim o presente sai da lista e ninguém compra o mesmo item.',
   },

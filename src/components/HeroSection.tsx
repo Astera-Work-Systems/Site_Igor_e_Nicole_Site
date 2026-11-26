@@ -30,7 +30,7 @@ export default function HeroSection() {
             <p className="text-base text-ink-muted leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
               Para facilitar a montagem do nosso lar e evitar itens duplicados, deixamos aqui
               algumas sugestões de presentes: presenteie por Pix ou cartão, ou marque que vai
-              levar o presente pessoalmente.{' '}
+              entregar o presente pessoalmente.{' '}
               <span className="font-semibold text-champagne-dark">
                 A lista é só uma sugestão
               </span>{' '}
