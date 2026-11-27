@@ -281,7 +281,7 @@ function Painel() {
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <StatCard icon={DollarSign} label="Total Arrecadado" value={formatarValor(totalArrecadado)} color="champagne" />
             <StatCard icon={TrendingUp} label="Pagamentos Confirmados" value={String(pagas.length)} color="champagne" />
-            <StatCard icon={Users} label="Vão dar pessoalmente" value={String(totalPessoalmente)} color="ink" />
+            <StatCard icon={Users} label="Vão entregar pessoalmente" value={String(totalPessoalmente)} color="ink" />
           </div>
 
           <div className="bg-white rounded-2xl border border-champagne-100 p-6">
@@ -647,7 +647,7 @@ function PresenteForm({
             onChange={(e) => setForm({ ...form, permite_pessoalmente: e.target.checked })}
             className="accent-champagne"
           />
-          Aceita "Vou dar pessoalmente" (recomendado só para presentes menores)
+          Aceita "Vou entregar pessoalmente" (recomendado só para presentes menores)
         </label>
         <label className="flex items-center gap-2 text-sm text-ink-soft">
           <input
@@ -721,7 +721,7 @@ function AbaContribuicoes({ contribuicoes, onAlterado }: { contribuicoes: Contri
     { id: 'todas', label: 'Todas' },
     { id: 'confirmado', label: 'Confirmadas' },
     { id: 'pendente', label: 'Aguardando pagamento' },
-    { id: 'pessoalmente', label: 'Vão dar pessoalmente' },
+    { id: 'pessoalmente', label: 'Vão entregar pessoalmente' },
     { id: 'cancelado', label: 'Canceladas' },
   ];
 

@@ -16,7 +16,7 @@ export default function HeroSection() {
           {/* Texto */}
           <div className="text-center lg:text-left animate-fade-in-up">
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-ink leading-tight mb-6 text-balance">
-              Ajude a montar o nosso{' '}
+              Montando nosso{' '}
               <span className="text-champagne italic">novo lar</span>
               <span className="inline-block ml-2">
                 <Heart className="inline w-8 h-8 text-champagne fill-champagne-200" strokeWidth={1.5} />

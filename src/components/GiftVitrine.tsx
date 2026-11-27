@@ -69,13 +69,13 @@ export default function GiftVitrine({ presentes, erro, maxParcelas, onTentarNova
           </p>
         </div>
 
-        {/* Aviso "vou dar pessoalmente" — pedido da noiva: evitar presente repetido */}
+        {/* Aviso "vou entregar pessoalmente" — pedido da noiva: evitar presente repetido */}
         <div className="max-w-3xl mx-auto mb-10 flex items-start gap-3 rounded-2xl border border-champagne-200 bg-champagne-50 p-4 sm:p-5">
           <HandHeart className="w-6 h-6 text-champagne-dark flex-shrink-0 mt-0.5" />
           <p className="text-sm text-ink-soft leading-relaxed">
             <strong className="text-ink">Vai comprar o presente e entregar pessoalmente?</strong> Que
             alegria! Só pedimos uma coisa: clique em <strong>"Presentear"</strong> e escolha{' '}
-            <strong>"Vou dar pessoalmente"</strong>. Assim o item sai da lista e ninguém compra
+            <strong>"Vou entregar pessoalmente"</strong>. Assim o item sai da lista e ninguém compra
             repetido.{' '}
             <span className="text-champagne-dark font-medium">
               Se não marcar aqui, não temos como saber.
@@ -190,7 +190,7 @@ export default function GiftVitrine({ presentes, erro, maxParcelas, onTentarNova
                     </span>
                     {presente.permite_pessoalmente && !esgotado && (
                       <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-medium text-champagne-dark">
-                        <HandHeart className="w-3.5 h-3.5" /> Pode dar pessoalmente
+                        <HandHeart className="w-3.5 h-3.5" /> Pode entregar pessoalmente
                       </span>
                     )}
                   </div>

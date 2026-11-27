@@ -198,7 +198,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
   const opcoesForma: { id: Forma; label: string; icon: typeof QrCode; visivel: boolean }[] = [
     { id: 'pix', label: 'Pix', icon: QrCode, visivel: true },
     { id: 'cartao', label: 'Cartão', icon: CreditCard, visivel: true },
-    { id: 'pessoalmente', label: 'Vou dar pessoalmente', icon: HandHeart, visivel: podePessoalmente },
+    { id: 'pessoalmente', label: 'Vou entregar pessoalmente', icon: HandHeart, visivel: podePessoalmente },
   ];
 
   return (
@@ -406,7 +406,7 @@ export default function CheckoutModal({ presente, config, onClose, onContribuica
                     {pessoalmente ? 'Reservando...' : 'Gerando pagamento...'}
                   </>
                 ) : pessoalmente ? (
-                  'Confirmar: vou dar pessoalmente'
+                  'Confirmar: vou entregar pessoalmente'
                 ) : forma === 'pix' ? (
                   'Gerar Pix e Presentear'
                 ) : (

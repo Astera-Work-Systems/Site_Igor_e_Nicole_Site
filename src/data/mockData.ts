@@ -189,7 +189,7 @@ export const faqItems = [
   {
     pergunta: 'Posso comprar o presente e entregar pessoalmente?',
     resposta:
-      'Pode sim! A lista é só uma sugestão: você pode presentear pelo site ou comprar onde preferir e entregar pessoalmente. Se for um presente da lista marcado com "Pode dar pessoalmente", clique em "Presentear" e escolha "Vou dar pessoalmente". Assim o presente sai da lista e ninguém compra o mesmo item.',
+      'Pode sim! A lista é só uma sugestão: você pode presentear pelo site ou comprar onde preferir e entregar pessoalmente. Se for um presente da lista marcado com "Pode entregar pessoalmente", clique em "Presentear" e escolha "Vou entregar pessoalmente". Assim o presente sai da lista e ninguém compra o mesmo item.',
   },
   {
     pergunta: 'Como faço o pagamento?',
